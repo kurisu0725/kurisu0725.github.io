@@ -20,28 +20,37 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://example.com/index.html">
+  <meta name="description" content="参考文章：Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com) Huggingface相关前置配置Huggingface Access token 在Huggingface上点击个人设置里的Access Tokens, 然后点击New token，选择read。然后就得到了一串token，后续用于huggingface-cli 工具下载模型。 Hu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Diffuser部署示例">
+<meta property="og:url" content="http://example.com/2024/05/29/Diffuser%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="参考文章：Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com) Huggingface相关前置配置Huggingface Access token 在Huggingface上点击个人设置里的Access Tokens, 然后点击New token，选择read。然后就得到了一串token，后续用于huggingface-cli 工具下载模型。 Hu">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="c:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529153917288.png">
+<meta property="og:image" content="c:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160603147.png">
+<meta property="og:image" content="c:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160845903.png">
+<meta property="og:image" content="c:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160924523.png">
+<meta property="article:published_time" content="2024-05-29T07:19:24.000Z">
+<meta property="article:modified_time" content="2024-05-29T08:09:56.216Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="c:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529153917288.png">
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2024/05/29/Diffuser%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>Hexo</title>
+  <title>Diffuser部署示例 | Hexo</title>
   
 
 
@@ -139,9 +148,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -157,10 +167,9 @@
       <meta itemprop="name" content="Hexo">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/05/29/Diffuser%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B/" class="post-title-link" itemprop="url">Diffuser部署示例</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Diffuser部署示例
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -184,7 +193,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>参考文章：<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072"><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a></a></p>
+        <p>参考文章：<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072"><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a></a></p>
 <h2 id="Huggingface相关前置配置"><a href="#Huggingface相关前置配置" class="headerlink" title="Huggingface相关前置配置"></a>Huggingface相关前置配置</h2><h3 id="Huggingface-Access-token"><a href="#Huggingface-Access-token" class="headerlink" title="Huggingface Access token"></a>Huggingface Access token</h3><p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529153917288.png" alt="image-20240529153917288"></p>
 <p>在Huggingface上点击个人设置里的<strong>Access Tokens</strong>, 然后点击<strong>New token</strong>，选择<strong>read</strong>。然后就得到了一串token，后续用于<strong>huggingface-cli</strong> 工具下载模型。</p>
 <h3 id="Huggingface-cli-和镜像源配置"><a href="#Huggingface-cli-和镜像源配置" class="headerlink" title="Huggingface-cli 和镜像源配置"></a>Huggingface-cli 和镜像源配置</h3><p>参考网页中的方法二: <a target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
@@ -237,160 +246,30 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br></pre></td></tr></table></figure>
 
 
-      
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/my-first-blog/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/05/29/my-first-blog/" class="post-title-link" itemprop="url">my-first-blog</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2024-05-29 14:59:35 / 修改时间：15:21:41" itemprop="dateCreated datePublished" datetime="2024-05-29T14:59:35+08:00">2024-05-29</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="My-first-blog"><a href="#My-first-blog" class="headerlink" title="My first blog"></a>My first blog</h1><p>文章参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.html">【基础篇】hexo博客搭建教程</a></p>
-<p>省流，配置完成后。</p>
-<p>创建博客:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new <span class="string">&quot;myblog&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>预览效果:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
-
-<p>push上传到github</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo g -d</span><br></pre></td></tr></table></figure>
+        
 
 
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/05/29/my-first-blog/" rel="prev" title="my-first-blog">
+      <i class="fa fa-chevron-left"></i> my-first-blog
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/05/29/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-05-29 14:36:28" itemprop="dateCreated datePublished" datetime="2024-05-29T14:36:28+08:00">2024-05-29</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
   
 
 
@@ -443,6 +322,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Huggingface%E7%9B%B8%E5%85%B3%E5%89%8D%E7%BD%AE%E9%85%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">Huggingface相关前置配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Huggingface-Access-token"><span class="nav-number">1.1.</span> <span class="nav-text">Huggingface Access token</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Huggingface-cli-%E5%92%8C%E9%95%9C%E5%83%8F%E6%BA%90%E9%85%8D%E7%BD%AE"><span class="nav-number">1.2.</span> <span class="nav-text">Huggingface-cli 和镜像源配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#github-huggingface-diffusers"><span class="nav-number">2.</span> <span class="nav-text">github&#x2F;huggingface&#x2F;diffusers</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="nav-number">2.1.</span> <span class="nav-text">安装依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">下载模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E8%BF%90%E8%A1%8C"><span class="nav-number">2.3.</span> <span class="nav-text">测试运行</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
