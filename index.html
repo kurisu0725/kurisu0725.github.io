@@ -170,7 +170,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-05-29 15:19:24 / 修改时间：16:09:56" itemprop="dateCreated datePublished" datetime="2024-05-29T15:19:24+08:00">2024-05-29</time>
+              <time title="创建时间：2024-05-29 15:19:24 / 修改时间：16:56:21" itemprop="dateCreated datePublished" datetime="2024-05-29T15:19:24+08:00">2024-05-29</time>
             </span>
 
           
@@ -185,7 +185,7 @@
 
       
           <p>参考文章：<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072"><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a></a></p>
-<h2 id="Huggingface相关前置配置"><a href="#Huggingface相关前置配置" class="headerlink" title="Huggingface相关前置配置"></a>Huggingface相关前置配置</h2><h3 id="Huggingface-Access-token"><a href="#Huggingface-Access-token" class="headerlink" title="Huggingface Access token"></a>Huggingface Access token</h3><p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529153917288.png" alt="image-20240529153917288"></p>
+<h2 id="Huggingface相关前置配置"><a href="#Huggingface相关前置配置" class="headerlink" title="Huggingface相关前置配置"></a>Huggingface相关前置配置</h2><h3 id="Huggingface-Access-token"><a href="#Huggingface-Access-token" class="headerlink" title="Huggingface Access token"></a>Huggingface Access token</h3><p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291655699.png" alt="image-20240529153917288"></p>
 <p>在Huggingface上点击个人设置里的<strong>Access Tokens</strong>, 然后点击<strong>New token</strong>，选择<strong>read</strong>。然后就得到了一串token，后续用于<strong>huggingface-cli</strong> 工具下载模型。</p>
 <h3 id="Huggingface-cli-和镜像源配置"><a href="#Huggingface-cli-和镜像源配置" class="headerlink" title="Huggingface-cli 和镜像源配置"></a>Huggingface-cli 和镜像源配置</h3><p>参考网页中的方法二: <a target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
 <p>1.安装依赖</p>
@@ -224,16 +224,16 @@
 <p>里边的HUGGING_FACE_TOKEN就是前边生成的access token。这里我直接写成硬编码直接赋值了。</p>
 <p>如果不设置 <strong>–local-dir</strong> 选项，下载的模型会存在 .cache&#x2F;huggingface下.</p>
 <p>下载结果大概是这样：</p>
-<p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160603147.png" alt="image-20240529160603147"></p>
+<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291654405.png" alt="image-20240529160603147"></p>
 <p>前边部分的下载没有保存，实际上会执行很多文件的下载。</p>
 <h3 id="测试运行"><a href="#测试运行" class="headerlink" title="测试运行"></a>测试运行</h3><p>创建一个程序test.py</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> diffusers <span class="keyword">import</span> DiffusionPipeline</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">pipeline = DiffusionPipeline.from_pretrained(<span class="string">&#x27;./stable-diffusion-v1-5/&#x27;</span> ,torch_dtype=torch.float16, variant=<span class="string">&#x27;fp16&#x27;</span>)</span><br><span class="line">pipeline.to(<span class="string">&quot;cuda&quot;</span>)</span><br><span class="line"></span><br><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br><span class="line">image = pipeline(prompt).images[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">image.save(<span class="string">&quot;./output.jpg&quot;</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
 <p>from_pretrained的第一个参数是模型名称或者下载到本地的文件夹名称。</p>
 <p>然后测试程序：</p>
-<p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160845903.png" alt="image-20240529160845903"></p>
+<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656156.png" alt="image-20240529160845903"></p>
 <p>可以看到执行完成，当前同一目录下会有一个output.jpg图片。</p>
-<p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240529160924523.png" alt="image-20240529160924523"></p>
+<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656157.png" alt="image-20240529160924523"></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br></pre></td></tr></table></figure>
 
 
@@ -280,7 +280,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-05-29 14:59:35 / 修改时间：15:21:41" itemprop="dateCreated datePublished" datetime="2024-05-29T14:59:35+08:00">2024-05-29</time>
+              <time title="创建时间：2024-05-29 14:59:35 / 修改时间：16:18:13" itemprop="dateCreated datePublished" datetime="2024-05-29T14:59:35+08:00">2024-05-29</time>
             </span>
 
           
@@ -303,7 +303,7 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
 
 <p>push上传到github</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo g -d</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo g &amp;&amp; hexo d</span><br></pre></td></tr></table></figure>
 
 
       
