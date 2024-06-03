@@ -199,40 +199,52 @@
 <h3 id="Huggingface-cli-和镜像源配置"><a href="#Huggingface-cli-和镜像源配置" class="headerlink" title="Huggingface-cli 和镜像源配置"></a>Huggingface-cli 和镜像源配置</h3><p>参考网页中的方法二: <a target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
 <p>1.安装依赖</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
+
 <p>2.设置环境变量</p>
 <p>Linux: 在 ~/.bashrc下添加</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HF_ENDPOINT=https://hf-mirror.com</span><br></pre></td></tr></table></figure>
+
 <p>然后记得更新配置, 命令行输入：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
+
 <p>3.下载模型</p>
 <p>这部分放到后边再说。更多的命令请参考<a target="_blank" rel="noopener" href="https://huggingface.co/docs/huggingface_hub/main/en/guides/cli#huggingface-cli-download">Command Line Interface (CLI) (huggingface.co)</a></p>
 <h2 id="github-huggingface-diffusers"><a href="#github-huggingface-diffusers" class="headerlink" title="github/huggingface/diffusers"></a>github/huggingface/diffusers</h2><p>这部分我们来安装diffuser和部署stable-diffusion-v1-5。</p>
 <h3 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h3><p>首先根据 <a target="_blank" rel="noopener" href="https://github.com/huggingface/diffusers">huggingface/diffusers: 🤗 Diffusers: State-of-the-art diffusion models for image and audio generation in PyTorch and FLAX</a> 安装所需的库：</p>
 <p>安装diffuser所需的torch：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[torch]</span><br></pre></td></tr></table></figure>
+
 <p>使用conda安装的话貌似安装的版本比较老，torch1.12的。pip安装的为官方包。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda install -c conda-forge diffusers</span><br></pre></td></tr></table></figure>
+
 <p>安装Flax：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[flax]</span><br></pre></td></tr></table></figure>
+
 <p>可能还要安装一个 transformers 库</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install transformers</span><br></pre></td></tr></table></figure>
+
+
+
 <h3 id="下载模型"><a href="#下载模型" class="headerlink" title="下载模型"></a>下载模型</h3><p>这里使用的模型我们就用<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a> 使用的stable-diffusion-v1-5。</p>
 <p>huggingface-cli download 命令可以下载整个仓库，也可以下载多个文件，但不支持下载文件夹。</p>
 <p>下面是我下载所需文件所用的bash脚本：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">HUGGING_FACE_TOKEN=<span class="string">&quot;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&quot;</span></span><br><span class="line">MODEL_NAME=<span class="string">&quot;runwayml/stable-diffusion-v1-5&quot;</span></span><br><span class="line">OUTPUT_DIR=<span class="string">&quot;./stable-diffusion-v1-5&quot;</span></span><br><span class="line"><span class="comment"># 登录到 Hugging Face CLI</span></span><br><span class="line">huggingface-cli login --token <span class="variable">$HUGGING_FACE_TOKEN</span></span><br><span class="line"><span class="comment"># 创建输出目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$OUTPUT_DIR</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载模型</span></span><br><span class="line"><span class="comment"># huggingface-cli repo download $MODEL_NAME --local-dir $OUTPUT_DIR</span></span><br><span class="line"><span class="comment"># 下载模型文件</span></span><br><span class="line"></span><br><span class="line">(</span><br><span class="line">  huggingface-cli download <span class="variable">$MODEL_NAME</span> \</span><br><span class="line">    feature_extractor/preprocessor_config.json \</span><br><span class="line">    model_index.json \</span><br><span class="line">    tokenizer/merges.txt \</span><br><span class="line">    tokenizer/special_tokens_map.json \</span><br><span class="line">    tokenizer/tokenizer_config.json \</span><br><span class="line">    tokenizer/vocab.json \</span><br><span class="line">    scheduler/scheduler_config.json \</span><br><span class="line">    unet/config.json \</span><br><span class="line">    unet/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    vae/config.json \</span><br><span class="line">    vae/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    text_encoder/config.json \</span><br><span class="line">    text_encoder/pytorch_model.fp16.bin \</span><br><span class="line">    safety_checker/config.json \</span><br><span class="line">    safety_checker/pytorch_model.fp16.bin \</span><br><span class="line">    --local-dir <span class="variable">$OUTPUT_DIR</span> \</span><br><span class="line">)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Model downloaded to <span class="variable">$OUTPUT_DIR</span>&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
 <p>里边的HUGGING_FACE_TOKEN就是前边生成的access token。这里我直接写成硬编码直接赋值了。</p>
-<p>如果不设置 <strong>—local-dir</strong> 选项，下载的模型会存在 .cache/huggingface下.</p>
+<p>如果不设置 <strong>–local-dir</strong> 选项，下载的模型会存在 .cache/huggingface下.</p>
 <p>下载结果大概是这样：</p>
 <p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291654405.png" alt="image-20240529160603147"></p>
 <p>前边部分的下载没有保存，实际上会执行很多文件的下载。</p>
 <h3 id="测试运行"><a href="#测试运行" class="headerlink" title="测试运行"></a>测试运行</h3><p>创建一个程序test.py</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> diffusers <span class="keyword">import</span> DiffusionPipeline</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">pipeline = DiffusionPipeline.from_pretrained(<span class="string">&#x27;./stable-diffusion-v1-5/&#x27;</span> ,torch_dtype=torch.float16, variant=<span class="string">&#x27;fp16&#x27;</span>)</span><br><span class="line">pipeline.to(<span class="string">&quot;cuda&quot;</span>)</span><br><span class="line"></span><br><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br><span class="line">image = pipeline(prompt).images[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">image.save(<span class="string">&quot;./output.jpg&quot;</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
 <p>from_pretrained的第一个参数是模型名称或者下载到本地的文件夹名称。</p>
 <p>然后测试程序：</p>
 <p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656156.png" alt="image-20240529160845903"></p>
 <p>可以看到执行完成，当前同一目录下会有一个output.jpg图片。</p>
 <p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656157.png" alt="image-20240529160924523"></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br></pre></td></tr></table></figure>
+
 
     </div>
 
