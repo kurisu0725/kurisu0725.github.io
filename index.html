@@ -184,35 +184,57 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="DDPM"><a href="#DDPM" class="headerlink" title="DDPM"></a>DDPM</h1><p>参考：<a target="_blank" rel="noopener" href="https://github.com/abarankab/DDPM/tree/main">abarankab/DDPM: PyTorch DDPM implementation (github.com)</a></p>
-<h2 id="alpha-beta怎么获得"><a href="#alpha-beta怎么获得" class="headerlink" title="alpha, beta怎么获得"></a>alpha, beta怎么获得</h2><p>相关公式：</p>
-<p>$$<br>\alpha_t = 1  - \beta_t \\x_t = \sqrt{\bar{\alpha_t}} x_0+\sqrt{1-\bar{\alpha_t}}\bar{z_t} \<br>\sigma_t = \sqrt{1-\bar{\alpha_t}}<br>$$<br><strong>beta</strong>：</p>
+          <h1 id="ddpm">DDPM</h1>
+<p>参考：<a
+target="_blank" rel="noopener" href="https://github.com/abarankab/DDPM/tree/main">abarankab/DDPM:
+PyTorch DDPM implementation (github.com)</a></p>
+<h2 id="alpha-beta怎么获得">alpha, beta怎么获得</h2>
+<p>相关公式：</p>
+<p><span class="math display">\[
+\alpha_t = 1  - \beta_t \\x_t = \sqrt{\bar{\alpha_t}}
+x_0+\sqrt{1-\bar{\alpha_t}}\bar{z_t} \\
+\sigma_t = \sqrt{1-\bar{\alpha_t}}
+\]</span> <strong>beta</strong>：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">generate_linear_schedule</span>(<span class="params">T, low, high</span>):</span><br><span class="line">    <span class="keyword">return</span> np.linspace(low, high, T)</span><br></pre></td></tr></table></figure>
-
 <p><strong>alphas</strong>：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">alphas = <span class="number">1.0</span> - betas</span><br><span class="line">alphas_cumprod = np.cumprod(alphas)</span><br></pre></td></tr></table></figure>
-
-<h2 id="训练过程"><a href="#训练过程" class="headerlink" title="训练过程"></a>训练过程</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_losses</span>(<span class="params">self, x, t, y</span>):</span><br><span class="line">        noise = torch.randn_like(x)</span><br><span class="line"></span><br><span class="line">        perturbed_x = self.perturb_x(x, t, noise)</span><br><span class="line">        estimated_noise = self.model(perturbed_x, t, y)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self.loss_type == <span class="string">&quot;l1&quot;</span>:</span><br><span class="line">            loss = F.l1_loss(estimated_noise, noise)</span><br><span class="line">        <span class="keyword">elif</span> self.loss_type == <span class="string">&quot;l2&quot;</span>:</span><br><span class="line">            loss = F.mse_loss(estimated_noise, noise)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> loss</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, y=<span class="literal">None</span></span>):</span><br><span class="line">    b, c, h, w = x.shape</span><br><span class="line">    device = x.device</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> h != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image height does not match diffusion parameters&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> w != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image width does not match diffusion parameters&quot;</span>)</span><br><span class="line"></span><br><span class="line">    t = torch.randint(<span class="number">0</span>, self.num_timesteps, (b,), device=device)</span><br><span class="line">    <span class="keyword">return</span> self.get_losses(x, t, y)</span><br></pre></td></tr></table></figure>
-
-<h2 id="推理过程"><a href="#推理过程" class="headerlink" title="推理过程"></a>推理过程</h2><p>相关公式：<br>$$<br>x_{t-1} = \frac{1}{\sqrt{\alpha_t}}(x_t - \frac{1-\alpha_t}{\sqrt{1-\bar{\alpha_t}}}\pmb{z}_\theta(x_t,t)) + \sigma_t \pmb{z} \<br>\sigma_t = \sqrt{1 - \bar{\alpha_t}}<br>$$</p>
+<h2 id="训练过程">训练过程</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_losses</span>(<span class="params">self, x, t, y</span>):</span><br><span class="line">        noise = torch.randn_like(x)</span><br><span class="line"></span><br><span class="line">        perturbed_x = self.perturb_x(x, t, noise)</span><br><span class="line">        estimated_noise = self.model(perturbed_x, t, y)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self.loss_type == <span class="string">&quot;l1&quot;</span>:</span><br><span class="line">            loss = F.l1_loss(estimated_noise, noise)</span><br><span class="line">        <span class="keyword">elif</span> self.loss_type == <span class="string">&quot;l2&quot;</span>:</span><br><span class="line">            loss = F.mse_loss(estimated_noise, noise)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> loss</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, y=<span class="literal">None</span></span>):</span><br><span class="line">    b, c, h, w = x.shape</span><br><span class="line">    device = x.device</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> h != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image height does not match diffusion parameters&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> w != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image width does not match diffusion parameters&quot;</span>)</span><br><span class="line"></span><br><span class="line">    t = torch.randint(<span class="number">0</span>, self.num_timesteps, (b,), device=device)</span><br><span class="line">    <span class="keyword">return</span> self.get_losses(x, t, y)</span><br></pre></td></tr></table></figure>
+<h2 id="推理过程">推理过程</h2>
+<p>相关公式： <span class="math display">\[
+x_{t-1} = \frac{1}{\sqrt{\alpha_t}}(x_t -
+\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha_t}}}\pmb{z}_\theta(x_t,t)) +
+\sigma_t \pmb{z} \\
+\sigma_t = \sqrt{1 - \bar{\alpha_t}}
+\]</span></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"> @torch.no_grad()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">remove_noise</span>(<span class="params">self, x, t, y, use_ema=<span class="literal">True</span></span>):</span><br><span class="line">    <span class="keyword">if</span> use_ema:</span><br><span class="line">        <span class="keyword">return</span> (</span><br><span class="line">            (x - extract(self.remove_noise_coeff, t, x.shape) * self.ema_model(x, t, y)) *</span><br><span class="line">            extract(self.reciprocal_sqrt_alphas, t, x.shape)</span><br><span class="line">        )</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> (</span><br><span class="line">            (x - extract(self.remove_noise_coeff, t, x.shape) * self.model(x, t, y)) *</span><br><span class="line">            extract(self.reciprocal_sqrt_alphas, t, x.shape)</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line"><span class="meta">@torch.no_grad()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sample</span>(<span class="params">self, batch_size, device, y=<span class="literal">None</span>, use_ema=<span class="literal">True</span></span>):</span><br><span class="line">    <span class="keyword">if</span> y <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> batch_size != <span class="built_in">len</span>(y):</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;sample batch size different from length of given y&quot;</span>)</span><br><span class="line"></span><br><span class="line">    x = torch.randn(batch_size, self.img_channels, *self.img_size, device=device)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="built_in">range</span>(self.num_timesteps - <span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>):</span><br><span class="line">        t_batch = torch.tensor([t], device=device).repeat(batch_size)</span><br><span class="line">        x = self.remove_noise(x, t_batch, y, use_ema)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> t &gt; <span class="number">0</span>:</span><br><span class="line">            x += extract(self.sigma, t_batch, x.shape) * torch.randn_like(x)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> x.cpu().detach()</span><br></pre></td></tr></table></figure>
-
 <p>其中extract函数为:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">extract</span>(<span class="params">a, t, x_shape</span>):</span><br><span class="line">    b, *_ = t.shape</span><br><span class="line">    out = a.gather(-<span class="number">1</span>, t)</span><br><span class="line">    <span class="keyword">return</span> out.reshape(b, *((<span class="number">1</span>,) * (<span class="built_in">len</span>(x_shape) - <span class="number">1</span>)))</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">a：一个形状为 (num_timesteps, ...) 的张量，存储了在扩散过程的每个时间步的参数。</span></span><br><span class="line"><span class="string">t：一个包含时间步的张量，形状为 (batch_size, )。</span></span><br><span class="line"><span class="string">x_shape：当前图像 x 的形状。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">(x - extract(self.remove_noise_coeff, t, x.shape) * self.model(x, t, y)) 中的两个张量相乘。这里的 extract(self.remove_noise_coeff, t, x.shape) 的形状是 (batch_size, 1, 1, ..., 1)，而 self.model(x, t, y) 的形状是 (batch_size, channels, height, width)。由于两者的形状在最后几个维度上不一致，系统会自动扩展形状较小的张量，使其与形状较大的张量在相应的维度上保持一致，然后进行逐元素相乘。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">extract(self.reciprocal_sqrt_alphas, t, x.shape) 与前面结果相乘。同样地，这里的 extract(self.reciprocal_sqrt_alphas, t, x.shape) 的形状也是 (batch_size, 1, 1, ..., 1)，因此与前面的结果进行相乘时也会触发广播，保证了每个位置上的值都会被相应的缩放系数调整。</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>假设 <code>a</code> 是一个张量，形状为 <code>(batch_size, num_timesteps)</code>，而 <code>t</code> 是一个形状为 <code>(batch_size, 1)</code> 的张量，它包含时间步的索引。gather 函数这个操作将从 <code>a</code> 的最后一个维度（即时间步维度）根据 <code>t</code> 中的索引提取相应的元素。</p>
-<h2 id="UNet结构"><a href="#UNet结构" class="headerlink" title="UNet结构"></a>UNet结构</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">x = self.init_conv(x)</span><br><span class="line"></span><br><span class="line">skips = [x]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.downs:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line">    skips.append(x)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.mid:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.ups:</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">isinstance</span>(layer, ResidualBlock):</span><br><span class="line">        x = torch.cat([x, skips.pop()], dim=<span class="number">1</span>)</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line">x = self.activation(self.out_norm(x))</span><br><span class="line">x = self.out_conv(x)</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031723318.png" alt="image-20240603172359232"></p>
-<h3 id="time-emb是怎么得到"><a href="#time-emb是怎么得到" class="headerlink" title="time_emb是怎么得到"></a>time_emb是怎么得到</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> self.time_mlp <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">    <span class="keyword">if</span> time <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;time conditioning was specified but tim is not passed&quot;</span>)</span><br><span class="line"></span><br><span class="line">    time_emb = self.time_mlp(time)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    time_emb = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
-
+<p>假设 <code>a</code> 是一个张量，形状为
+<code>(batch_size, num_timesteps)</code>，而 <code>t</code> 是一个形状为
+<code>(batch_size, 1)</code> 的张量，它包含时间步的索引。gather
+函数这个操作将从 <code>a</code> 的最后一个维度（即时间步维度）根据
+<code>t</code> 中的索引提取相应的元素。</p>
+<h2 id="unet结构">UNet结构</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">x = self.init_conv(x)</span><br><span class="line"></span><br><span class="line">skips = [x]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.downs:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line">    skips.append(x)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.mid:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.ups:</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">isinstance</span>(layer, ResidualBlock):</span><br><span class="line">        x = torch.cat([x, skips.pop()], dim=<span class="number">1</span>)</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line">x = self.activation(self.out_norm(x))</span><br><span class="line">x = self.out_conv(x)</span><br></pre></td></tr></table></figure>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031723318.png"
+alt="image-20240603172359232" />
+<figcaption aria-hidden="true">image-20240603172359232</figcaption>
+</figure>
+<h3 id="time_emb是怎么得到">time_emb是怎么得到</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> self.time_mlp <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">    <span class="keyword">if</span> time <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;time conditioning was specified but tim is not passed&quot;</span>)</span><br><span class="line"></span><br><span class="line">    time_emb = self.time_mlp(time)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    time_emb = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
 <p>self.time_mlp()将输入的时间步表示为向量。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">self.time_mlp = nn.Sequential(</span><br><span class="line">            PositionalEmbedding(base_channels, time_emb_scale),</span><br><span class="line">            nn.Linear(base_channels, time_emb_dim),</span><br><span class="line">            nn.SiLU(),</span><br><span class="line">            nn.Linear(time_emb_dim, time_emb_dim),</span><br><span class="line">        ) <span class="keyword">if</span> time_emb_dim <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">else</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure>
-
 <p>time_emb使用在layer即ResidualBlock中：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, time_emb=<span class="literal">None</span>, y=<span class="literal">None</span></span>):</span><br><span class="line">    out = self.activation(self.norm_1(x))</span><br><span class="line">    out = self.conv_1(out)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.time_bias <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">if</span> time_emb <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;time conditioning was specified but time_emb is not passed&quot;</span>)</span><br><span class="line">        out += self.time_bias(self.activation(time_emb))[:, :, <span class="literal">None</span>, <span class="literal">None</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.class_bias <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">if</span> y <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;class conditioning was specified but y is not passed&quot;</span>)</span><br><span class="line"></span><br><span class="line">        out += self.class_bias(y)[:, :, <span class="literal">None</span>, <span class="literal">None</span>]</span><br><span class="line"></span><br><span class="line">    out = self.activation(self.norm_2(out))</span><br><span class="line">    out = self.conv_2(out) + self.residual_connection(x)</span><br><span class="line">    out = self.attention(out)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> out</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031731458.png" alt="image-20240603173102380"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031731458.png"
+alt="image-20240603173102380" />
+<figcaption aria-hidden="true">image-20240603173102380</figcaption>
+</figure>
 <p>time_emb和位置编码类似，和输入图像卷积后的结果作加法。</p>
 
       
@@ -272,46 +294,107 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Github"><a href="#Github" class="headerlink" title="Github"></a>Github</h2><ol>
+          <h2 id="github">Github</h2>
+<ol type="1">
 <li>新建一个仓库，选择Public，其他都不需要。</li>
 <li>点击设置的developer settings</li>
 </ol>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291940308.png" alt="image-20240529194015223"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291940308.png"
+alt="image-20240529194015223" />
+<figcaption aria-hidden="true">image-20240529194015223</figcaption>
+</figure>
 <p>3.选择Personal access tokens的 Tokens(classic)选项。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291944073.png" alt="image-20240529194453985"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291944073.png"
+alt="image-20240529194453985" />
+<figcaption aria-hidden="true">image-20240529194453985</figcaption>
+</figure>
 <p>4.点击<strong>Generate new token (classic)</strong></p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291945994.png" alt="image-20240529194527955"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291945994.png"
+alt="image-20240529194527955" />
+<figcaption aria-hidden="true">image-20240529194527955</figcaption>
+</figure>
 <p>5.设置 Expiration 为 no expiration，永不过期。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947857.png" alt="image-20240529194708828"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947857.png"
+alt="image-20240529194708828" />
+<figcaption aria-hidden="true">image-20240529194708828</figcaption>
+</figure>
 <p>6.在Select scopes选项中只勾选repo仓库一栏。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947020.png" alt="image-20240529194743988"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947020.png"
+alt="image-20240529194743988" />
+<figcaption aria-hidden="true">image-20240529194743988</figcaption>
+</figure>
 <p>7.接下来你会得到一个token用于picgo，记得先把token保存，只有第一次能显示token。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291949585.png" alt="image-20240529194911560"></p>
-<h2 id="Picgo"><a href="#Picgo" class="headerlink" title="Picgo"></a>Picgo</h2><p>1.在github上找到picgo的release：<a target="_blank" rel="noopener" href="https://github.com/Molunerfinn/PicGo/releases/tag/v2.3.1">Release 2.3.1 · Molunerfinn/PicGo (github.com)</a></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291949585.png"
+alt="image-20240529194911560" />
+<figcaption aria-hidden="true">image-20240529194911560</figcaption>
+</figure>
+<h2 id="picgo">Picgo</h2>
+<p>1.在github上找到picgo的release：<a
+target="_blank" rel="noopener" href="https://github.com/Molunerfinn/PicGo/releases/tag/v2.3.1">Release
+2.3.1 · Molunerfinn/PicGo (github.com)</a></p>
 <p>2.下载setup.exe文件，并安装。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291951953.png" alt="image-20240529195123916"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291951953.png"
+alt="image-20240529195123916" />
+<figcaption aria-hidden="true">image-20240529195123916</figcaption>
+</figure>
 <p>3.下好后你会看到这个界面</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291952886.png" alt="image-20240529195233843"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291952886.png"
+alt="image-20240529195233843" />
+<figcaption aria-hidden="true">image-20240529195233843</figcaption>
+</figure>
 <p>选择图床设置-github：</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291953545.png" alt="image-20240529195313508"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291953545.png"
+alt="image-20240529195313508" />
+<figcaption aria-hidden="true">image-20240529195313508</figcaption>
+</figure>
 <ul>
-<li><p>仓库名为 username/reponame</p>
-</li>
-<li><p>分支名一般为默认的 master</p>
-</li>
-<li><p>token为以上github生成的token</p>
-</li>
-<li><p>存储路径随意</p>
-</li>
-<li><p>自定义域名：cdn加速，格式为 <a target="_blank" rel="noopener" href="https://jsd.onmicrosoft.cn/gh/[username]/[reponame]">https://jsd.onmicrosoft.cn/gh/[username]/[reponame]</a></p>
-</li>
+<li><p>仓库名为 username/reponame</p></li>
+<li><p>分支名一般为默认的 master</p></li>
+<li><p>token为以上github生成的token</p></li>
+<li><p>存储路径随意</p></li>
+<li><p>自定义域名：cdn加速，格式为
+https://jsd.onmicrosoft.cn/gh/[username]/[reponame]</p></li>
 </ul>
-<h2 id="Typora"><a href="#Typora" class="headerlink" title="Typora"></a>Typora</h2><p>1.要在typora中应用上传图片到图床，需要打开菜单栏的<strong>文件-偏好设置-图像</strong></p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291957585.png" alt="image-20240529195726534"></p>
+<h2 id="typora">Typora</h2>
+<p>1.要在typora中应用上传图片到图床，需要打开菜单栏的<strong>文件-偏好设置-图像</strong></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291957585.png"
+alt="image-20240529195726534" />
+<figcaption aria-hidden="true">image-20240529195726534</figcaption>
+</figure>
 <p>2.修改<strong>插入图片时</strong>的动作为上传图片</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958499.png" alt="image-20240529195812450"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958499.png"
+alt="image-20240529195812450" />
+<figcaption aria-hidden="true">image-20240529195812450</figcaption>
+</figure>
 <p>3.接下来选择<strong>上传服务</strong>：Picgo(app)</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958868.png" alt="image-20240529195849843"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958868.png"
+alt="image-20240529195849843" />
+<figcaption aria-hidden="true">image-20240529195849843</figcaption>
+</figure>
 <p>路径为你所下载的Picgo.exe。</p>
 <p>然后就完成了，这样在插入截屏的图片时就会自动上传图片到图床，并且引用也会自动更改，用hexo更新的博客就没问题了。</p>
 
@@ -372,58 +455,91 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>参考文章：<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072"><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a></a></p>
-<h2 id="Huggingface相关前置配置"><a href="#Huggingface相关前置配置" class="headerlink" title="Huggingface相关前置配置"></a>Huggingface相关前置配置</h2><h3 id="Huggingface-Access-token"><a href="#Huggingface-Access-token" class="headerlink" title="Huggingface Access token"></a>Huggingface Access token</h3><p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291655699.png" alt="image-20240529153917288"></p>
-<p>在Huggingface上点击个人设置里的<strong>Access Tokens</strong>, 然后点击<strong>New token</strong>，选择<strong>read</strong>。然后就得到了一串token，后续用于<strong>huggingface-cli</strong> 工具下载模型。</p>
-<h3 id="Huggingface-cli-和镜像源配置"><a href="#Huggingface-cli-和镜像源配置" class="headerlink" title="Huggingface-cli 和镜像源配置"></a>Huggingface-cli 和镜像源配置</h3><p>参考网页中的方法二: <a target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
+          <p>参考文章：<a
+target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072">[Diffusers代码级讲解（绪论）——
+Diffusers快速上手 - 知乎
+(zhihu.com)](https://zhuanlan.zhihu.com/p/672574978)</a></p>
+<h2 id="huggingface相关前置配置">Huggingface相关前置配置</h2>
+<h3 id="huggingface-access-token">Huggingface Access token</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291655699.png"
+alt="image-20240529153917288" />
+<figcaption aria-hidden="true">image-20240529153917288</figcaption>
+</figure>
+<p>在Huggingface上点击个人设置里的<strong>Access Tokens</strong>,
+然后点击<strong>New
+token</strong>，选择<strong>read</strong>。然后就得到了一串token，后续用于<strong>huggingface-cli</strong>
+工具下载模型。</p>
+<h3 id="huggingface-cli-和镜像源配置">Huggingface-cli 和镜像源配置</h3>
+<p>参考网页中的方法二: <a
+target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
 <p>1.安装依赖</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
-
 <p>2.设置环境变量</p>
 <p>Linux: 在 ~/.bashrc下添加</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HF_ENDPOINT=https://hf-mirror.com</span><br></pre></td></tr></table></figure>
-
 <p>然后记得更新配置, 命令行输入：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
-
 <p>3.下载模型</p>
-<p>这部分放到后边再说。更多的命令请参考<a target="_blank" rel="noopener" href="https://huggingface.co/docs/huggingface_hub/main/en/guides/cli#huggingface-cli-download">Command Line Interface (CLI) (huggingface.co)</a></p>
-<h2 id="github-huggingface-diffusers"><a href="#github-huggingface-diffusers" class="headerlink" title="github/huggingface/diffusers"></a>github/huggingface/diffusers</h2><p>这部分我们来安装diffuser和部署stable-diffusion-v1-5。</p>
-<h3 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h3><p>首先根据 <a target="_blank" rel="noopener" href="https://github.com/huggingface/diffusers">huggingface/diffusers: 🤗 Diffusers: State-of-the-art diffusion models for image and audio generation in PyTorch and FLAX</a> 安装所需的库：</p>
+<p>这部分放到后边再说。更多的命令请参考<a
+target="_blank" rel="noopener" href="https://huggingface.co/docs/huggingface_hub/main/en/guides/cli#huggingface-cli-download">Command
+Line Interface (CLI) (huggingface.co)</a></p>
+<h2 id="githubhuggingfacediffusers">github/huggingface/diffusers</h2>
+<p>这部分我们来安装diffuser和部署stable-diffusion-v1-5。</p>
+<h3 id="安装依赖">安装依赖</h3>
+<p>首先根据 <a
+target="_blank" rel="noopener" href="https://github.com/huggingface/diffusers">huggingface/diffusers:
+🤗 Diffusers: State-of-the-art diffusion models for image and audio
+generation in PyTorch and FLAX</a> 安装所需的库：</p>
 <p>安装diffuser所需的torch：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[torch]</span><br></pre></td></tr></table></figure>
-
 <p>使用conda安装的话貌似安装的版本比较老，torch1.12的。pip安装的为官方包。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda install -c conda-forge diffusers</span><br></pre></td></tr></table></figure>
-
 <p>安装Flax：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[flax]</span><br></pre></td></tr></table></figure>
-
 <p>可能还要安装一个 transformers 库</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install transformers</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="下载模型"><a href="#下载模型" class="headerlink" title="下载模型"></a>下载模型</h3><p>这里使用的模型我们就用<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）—— Diffusers快速上手 - 知乎 (zhihu.com)</a> 使用的stable-diffusion-v1-5。</p>
-<p>huggingface-cli download 命令可以下载整个仓库，也可以下载多个文件，但不支持下载文件夹。</p>
+<h3 id="下载模型">下载模型</h3>
+<p>这里使用的模型我们就用<a
+target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）——
+Diffusers快速上手 - 知乎 (zhihu.com)</a>
+使用的stable-diffusion-v1-5。</p>
+<p>huggingface-cli download
+命令可以下载整个仓库，也可以下载多个文件，但不支持下载文件夹。</p>
 <p>下面是我下载所需文件所用的bash脚本：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">HUGGING_FACE_TOKEN=<span class="string">&quot;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&quot;</span></span><br><span class="line">MODEL_NAME=<span class="string">&quot;runwayml/stable-diffusion-v1-5&quot;</span></span><br><span class="line">OUTPUT_DIR=<span class="string">&quot;./stable-diffusion-v1-5&quot;</span></span><br><span class="line"><span class="comment"># 登录到 Hugging Face CLI</span></span><br><span class="line">huggingface-cli login --token <span class="variable">$HUGGING_FACE_TOKEN</span></span><br><span class="line"><span class="comment"># 创建输出目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$OUTPUT_DIR</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载模型</span></span><br><span class="line"><span class="comment"># huggingface-cli repo download $MODEL_NAME --local-dir $OUTPUT_DIR</span></span><br><span class="line"><span class="comment"># 下载模型文件</span></span><br><span class="line"></span><br><span class="line">(</span><br><span class="line">  huggingface-cli download <span class="variable">$MODEL_NAME</span> \</span><br><span class="line">    feature_extractor/preprocessor_config.json \</span><br><span class="line">    model_index.json \</span><br><span class="line">    tokenizer/merges.txt \</span><br><span class="line">    tokenizer/special_tokens_map.json \</span><br><span class="line">    tokenizer/tokenizer_config.json \</span><br><span class="line">    tokenizer/vocab.json \</span><br><span class="line">    scheduler/scheduler_config.json \</span><br><span class="line">    unet/config.json \</span><br><span class="line">    unet/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    vae/config.json \</span><br><span class="line">    vae/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    text_encoder/config.json \</span><br><span class="line">    text_encoder/pytorch_model.fp16.bin \</span><br><span class="line">    safety_checker/config.json \</span><br><span class="line">    safety_checker/pytorch_model.fp16.bin \</span><br><span class="line">    --local-dir <span class="variable">$OUTPUT_DIR</span> \</span><br><span class="line">)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Model downloaded to <span class="variable">$OUTPUT_DIR</span>&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>里边的HUGGING_FACE_TOKEN就是前边生成的access token。这里我直接写成硬编码直接赋值了。</p>
-<p>如果不设置 <strong>–local-dir</strong> 选项，下载的模型会存在 .cache/huggingface下.</p>
+<p>里边的HUGGING_FACE_TOKEN就是前边生成的access
+token。这里我直接写成硬编码直接赋值了。</p>
+<p>如果不设置 <strong>--local-dir</strong> 选项，下载的模型会存在
+.cache/huggingface下.</p>
 <p>下载结果大概是这样：</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291654405.png" alt="image-20240529160603147"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291654405.png"
+alt="image-20240529160603147" />
+<figcaption aria-hidden="true">image-20240529160603147</figcaption>
+</figure>
 <p>前边部分的下载没有保存，实际上会执行很多文件的下载。</p>
-<h3 id="测试运行"><a href="#测试运行" class="headerlink" title="测试运行"></a>测试运行</h3><p>创建一个程序test.py</p>
+<h3 id="测试运行">测试运行</h3>
+<p>创建一个程序test.py</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> diffusers <span class="keyword">import</span> DiffusionPipeline</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">pipeline = DiffusionPipeline.from_pretrained(<span class="string">&#x27;./stable-diffusion-v1-5/&#x27;</span> ,torch_dtype=torch.float16, variant=<span class="string">&#x27;fp16&#x27;</span>)</span><br><span class="line">pipeline.to(<span class="string">&quot;cuda&quot;</span>)</span><br><span class="line"></span><br><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br><span class="line">image = pipeline(prompt).images[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">image.save(<span class="string">&quot;./output.jpg&quot;</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
 <p>from_pretrained的第一个参数是模型名称或者下载到本地的文件夹名称。</p>
 <p>然后测试程序：</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656156.png" alt="image-20240529160845903"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656156.png"
+alt="image-20240529160845903" />
+<figcaption aria-hidden="true">image-20240529160845903</figcaption>
+</figure>
 <p>可以看到执行完成，当前同一目录下会有一个output.jpg图片。</p>
-<p><img src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656157.png" alt="image-20240529160924523"></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656157.png"
+alt="image-20240529160924523" />
+<figcaption aria-hidden="true">image-20240529160924523</figcaption>
+</figure>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br></pre></td></tr></table></figure>
-
 
       
     </div>
@@ -482,17 +598,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="My-first-blog"><a href="#My-first-blog" class="headerlink" title="My first blog"></a>My first blog</h1><p>文章参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.html">【基础篇】hexo博客搭建教程</a></p>
+          <h1 id="my-first-blog">My first blog</h1>
+<p>文章参考：<a
+target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.html">【基础篇】hexo博客搭建教程</a></p>
 <p>省流，配置完成后。</p>
 <p>创建博客:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new <span class="string">&quot;myblog&quot;</span></span><br></pre></td></tr></table></figure>
-
 <p>预览效果:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
-
 <p>push上传到github</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo g &amp;&amp; hexo d</span><br></pre></td></tr></table></figure>
-
 
       
     </div>
@@ -550,19 +665,29 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
+          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very
+first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for
+more info. If you get any problems when using Hexo, you can find the
+answer in <a
+target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or
+you can ask me on <a
+target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a
+target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
 <p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<h3 id="generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a
+target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a
+target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 
       
     </div>
