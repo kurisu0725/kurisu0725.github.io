@@ -145,7 +145,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/06/03/Diffusion/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/15/monodepthv2-digging-into-self-supervised-MDE/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -159,7 +159,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/06/03/Diffusion/" class="post-title-link" itemprop="url">Diffusion</a>
+            <a href="/2024/08/15/monodepthv2-digging-into-self-supervised-MDE/" class="post-title-link" itemprop="url">monodepthv2-digging into self-supervised MDE</a>
         </h2>
 
         <div class="post-meta">
@@ -168,10 +168,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2024-06-03 16:19:59 / 修改时间：18:00:56" itemprop="dateCreated datePublished" datetime="2024-06-03T16:19:59+08:00">2024-06-03</time>
+              <time title="创建时间：2024-08-15 14:15:02" itemprop="dateCreated datePublished" datetime="2024-08-15T14:15:02+08:00">2024-08-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-08-16 15:43:20" itemprop="dateModified" datetime="2024-08-16T15:43:20+08:00">2024-08-16</time>
+              </span>
 
           
 
@@ -184,58 +190,155 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="ddpm">DDPM</h1>
-<p>参考：<a
-target="_blank" rel="noopener" href="https://github.com/abarankab/DDPM/tree/main">abarankab/DDPM:
-PyTorch DDPM implementation (github.com)</a></p>
-<h2 id="alpha-beta怎么获得">alpha, beta怎么获得</h2>
-<p>相关公式：</p>
-<p><span class="math display">\[
-\alpha_t = 1  - \beta_t \\x_t = \sqrt{\bar{\alpha_t}}
-x_0+\sqrt{1-\bar{\alpha_t}}\bar{z_t} \\
-\sigma_t = \sqrt{1-\bar{\alpha_t}}
-\]</span> <strong>beta</strong>：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">generate_linear_schedule</span>(<span class="params">T, low, high</span>):</span><br><span class="line">    <span class="keyword">return</span> np.linspace(low, high, T)</span><br></pre></td></tr></table></figure>
-<p><strong>alphas</strong>：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">alphas = <span class="number">1.0</span> - betas</span><br><span class="line">alphas_cumprod = np.cumprod(alphas)</span><br></pre></td></tr></table></figure>
-<h2 id="训练过程">训练过程</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_losses</span>(<span class="params">self, x, t, y</span>):</span><br><span class="line">        noise = torch.randn_like(x)</span><br><span class="line"></span><br><span class="line">        perturbed_x = self.perturb_x(x, t, noise)</span><br><span class="line">        estimated_noise = self.model(perturbed_x, t, y)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self.loss_type == <span class="string">&quot;l1&quot;</span>:</span><br><span class="line">            loss = F.l1_loss(estimated_noise, noise)</span><br><span class="line">        <span class="keyword">elif</span> self.loss_type == <span class="string">&quot;l2&quot;</span>:</span><br><span class="line">            loss = F.mse_loss(estimated_noise, noise)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> loss</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, y=<span class="literal">None</span></span>):</span><br><span class="line">    b, c, h, w = x.shape</span><br><span class="line">    device = x.device</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> h != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image height does not match diffusion parameters&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> w != self.img_size[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;image width does not match diffusion parameters&quot;</span>)</span><br><span class="line"></span><br><span class="line">    t = torch.randint(<span class="number">0</span>, self.num_timesteps, (b,), device=device)</span><br><span class="line">    <span class="keyword">return</span> self.get_losses(x, t, y)</span><br></pre></td></tr></table></figure>
-<h2 id="推理过程">推理过程</h2>
-<p>相关公式： <span class="math display">\[
-x_{t-1} = \frac{1}{\sqrt{\alpha_t}}(x_t -
-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha_t}}}\pmb{z}_\theta(x_t,t)) +
-\sigma_t \pmb{z} \\
-\sigma_t = \sqrt{1 - \bar{\alpha_t}}
+          <h2 id="monodepth-v1">monodepth v1</h2>
+<h3
+id="depth-estimation-as-image-reconstruction-将深度估计视为图像重建任务">Depth
+Estimation as Image Reconstruction 将深度估计视为图像重建任务</h3>
+<p><strong>intuition</strong>:</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161412735.png"
+alt="image-20240816141215696" />
+<figcaption aria-hidden="true">image-20240816141215696</figcaption>
+</figure>
+<p><strong>如果网络能学习从一个视图重建另一个视图的图像，那么已经学习到了场景的三维信息，包括深度信息。</strong></p>
+<p>不直接估计图像的深度depth，而是估计<span
+class="math inline">\(d\)</span> (corresponds to the image disparity - a
+scalar value per pixel that our model will learn to predict.)
+左右视图的逐像素差，从而重建出右视图。 <span class="math display">\[
+d = | X_L - X_R |
 \]</span></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"> @torch.no_grad()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">remove_noise</span>(<span class="params">self, x, t, y, use_ema=<span class="literal">True</span></span>):</span><br><span class="line">    <span class="keyword">if</span> use_ema:</span><br><span class="line">        <span class="keyword">return</span> (</span><br><span class="line">            (x - extract(self.remove_noise_coeff, t, x.shape) * self.ema_model(x, t, y)) *</span><br><span class="line">            extract(self.reciprocal_sqrt_alphas, t, x.shape)</span><br><span class="line">        )</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> (</span><br><span class="line">            (x - extract(self.remove_noise_coeff, t, x.shape) * self.model(x, t, y)) *</span><br><span class="line">            extract(self.reciprocal_sqrt_alphas, t, x.shape)</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line"><span class="meta">@torch.no_grad()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sample</span>(<span class="params">self, batch_size, device, y=<span class="literal">None</span>, use_ema=<span class="literal">True</span></span>):</span><br><span class="line">    <span class="keyword">if</span> y <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> batch_size != <span class="built_in">len</span>(y):</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;sample batch size different from length of given y&quot;</span>)</span><br><span class="line"></span><br><span class="line">    x = torch.randn(batch_size, self.img_channels, *self.img_size, device=device)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="built_in">range</span>(self.num_timesteps - <span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>):</span><br><span class="line">        t_batch = torch.tensor([t], device=device).repeat(batch_size)</span><br><span class="line">        x = self.remove_noise(x, t_batch, y, use_ema)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> t &gt; <span class="number">0</span>:</span><br><span class="line">            x += extract(self.sigma, t_batch, x.shape) * torch.randn_like(x)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> x.cpu().detach()</span><br></pre></td></tr></table></figure>
-<p>其中extract函数为:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">extract</span>(<span class="params">a, t, x_shape</span>):</span><br><span class="line">    b, *_ = t.shape</span><br><span class="line">    out = a.gather(-<span class="number">1</span>, t)</span><br><span class="line">    <span class="keyword">return</span> out.reshape(b, *((<span class="number">1</span>,) * (<span class="built_in">len</span>(x_shape) - <span class="number">1</span>)))</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">a：一个形状为 (num_timesteps, ...) 的张量，存储了在扩散过程的每个时间步的参数。</span></span><br><span class="line"><span class="string">t：一个包含时间步的张量，形状为 (batch_size, )。</span></span><br><span class="line"><span class="string">x_shape：当前图像 x 的形状。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">(x - extract(self.remove_noise_coeff, t, x.shape) * self.model(x, t, y)) 中的两个张量相乘。这里的 extract(self.remove_noise_coeff, t, x.shape) 的形状是 (batch_size, 1, 1, ..., 1)，而 self.model(x, t, y) 的形状是 (batch_size, channels, height, width)。由于两者的形状在最后几个维度上不一致，系统会自动扩展形状较小的张量，使其与形状较大的张量在相应的维度上保持一致，然后进行逐元素相乘。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">extract(self.reciprocal_sqrt_alphas, t, x.shape) 与前面结果相乘。同样地，这里的 extract(self.reciprocal_sqrt_alphas, t, x.shape) 的形状也是 (batch_size, 1, 1, ..., 1)，因此与前面的结果进行相乘时也会触发广播，保证了每个位置上的值都会被相应的缩放系数调整。</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
-<p>假设 <code>a</code> 是一个张量，形状为
-<code>(batch_size, num_timesteps)</code>，而 <code>t</code> 是一个形状为
-<code>(batch_size, 1)</code> 的张量，它包含时间步的索引。gather
-函数这个操作将从 <code>a</code> 的最后一个维度（即时间步维度）根据
-<code>t</code> 中的索引提取相应的元素。</p>
-<h2 id="unet结构">UNet结构</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">x = self.init_conv(x)</span><br><span class="line"></span><br><span class="line">skips = [x]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.downs:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line">    skips.append(x)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.mid:</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> self.ups:</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">isinstance</span>(layer, ResidualBlock):</span><br><span class="line">        x = torch.cat([x, skips.pop()], dim=<span class="number">1</span>)</span><br><span class="line">    x = layer(x, time_emb, y)</span><br><span class="line"></span><br><span class="line">x = self.activation(self.out_norm(x))</span><br><span class="line">x = self.out_conv(x)</span><br></pre></td></tr></table></figure>
+<h4 id="流程"><strong>流程</strong></h4>
+<p>给定图像<span class="math inline">\(I_l, I_r\)</span> 。</p>
+<p>若将左视图变换为右视图，估计<span class="math inline">\(d_r\)</span>
+, 即右视图相对左视图的位移，得到估计的右视图 。 <span
+class="math display">\[
+I^l(d^r) = \overset{\sim}{I^r}
+\]</span> 同样的，从右视图估计得到左视图则为： <span
+class="math display">\[
+I^r(d_l) = \overset{\sim}{I^l}
+\]</span> 给定baseline distance <span class="math inline">\(b\)</span>
+和 相机焦距 <span class="math inline">\(f\)</span>
+，可以得到图像深度<span class="math inline">\(\hat{d}\)</span> <span
+class="math display">\[
+\hat{d} = b f /d
+\]</span></p>
+<h4 id="条件"><strong>条件</strong>：</h4>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031723318.png"
-alt="image-20240603172359232" />
-<figcaption aria-hidden="true">image-20240603172359232</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161401587.jpg"
+alt="Screenshot_2024-08-16-14-01-26-641_com.orion.note" />
+<figcaption
+aria-hidden="true">Screenshot_2024-08-16-14-01-26-641_com.orion.note</figcaption>
 </figure>
-<h3 id="time_emb是怎么得到">time_emb是怎么得到</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> self.time_mlp <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">    <span class="keyword">if</span> time <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;time conditioning was specified but tim is not passed&quot;</span>)</span><br><span class="line"></span><br><span class="line">    time_emb = self.time_mlp(time)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    time_emb = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
-<p>self.time_mlp()将输入的时间步表示为向量。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">self.time_mlp = nn.Sequential(</span><br><span class="line">            PositionalEmbedding(base_channels, time_emb_scale),</span><br><span class="line">            nn.Linear(base_channels, time_emb_dim),</span><br><span class="line">            nn.SiLU(),</span><br><span class="line">            nn.Linear(time_emb_dim, time_emb_dim),</span><br><span class="line">        ) <span class="keyword">if</span> time_emb_dim <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">else</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure>
-<p>time_emb使用在layer即ResidualBlock中：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, time_emb=<span class="literal">None</span>, y=<span class="literal">None</span></span>):</span><br><span class="line">    out = self.activation(self.norm_1(x))</span><br><span class="line">    out = self.conv_1(out)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.time_bias <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">if</span> time_emb <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;time conditioning was specified but time_emb is not passed&quot;</span>)</span><br><span class="line">        out += self.time_bias(self.activation(time_emb))[:, :, <span class="literal">None</span>, <span class="literal">None</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.class_bias <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">if</span> y <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;class conditioning was specified but y is not passed&quot;</span>)</span><br><span class="line"></span><br><span class="line">        out += self.class_bias(y)[:, :, <span class="literal">None</span>, <span class="literal">None</span>]</span><br><span class="line"></span><br><span class="line">    out = self.activation(self.norm_2(out))</span><br><span class="line">    out = self.conv_2(out) + self.residual_connection(x)</span><br><span class="line">    out = self.attention(out)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> out</span><br></pre></td></tr></table></figure>
+<p>相机成像面平行，左视图的深度等于右视图的深度。 <span
+class="math display">\[
+\hat{d}= depth_l =depth_r
+\]</span> <strong>约束</strong>：视差d
+只有X轴的位移，这通过极线矫正可以做到消除y轴的视差。</p>
+<h3 id="depth-estimation-network">Depth Estimation Network</h3>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202406031731458.png"
-alt="image-20240603173102380" />
-<figcaption aria-hidden="true">image-20240603173102380</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161420632.png"
+alt="image-20240816142055586" />
+<figcaption aria-hidden="true">image-20240816142055586</figcaption>
 </figure>
-<p>time_emb和位置编码类似，和输入图像卷积后的结果作加法。</p>
+<p><strong>Naive</strong>:
+输入左视图，估计从左到右的视差，会得到向右视图对齐的图像。</p>
+<p><strong>No LR</strong>: 右视图向左视图对齐。</p>
+<p>ps: 这个推理应该也是需要两张图？？</p>
+<p><strong>monodepth</strong>：做法是输入左视图<span
+class="math inline">\(d_l\)</span> ，预测得到左到右的<span
+class="math inline">\(d_r\)</span> ，和从右到左的<span
+class="math inline">\(d_l\)</span> ，用<span
+class="math inline">\(d_r\)</span> 对 <span
+class="math inline">\(I_l\)</span> warp得到<span
+class="math inline">\(\overset{\sim}{I_r}\)</span>，用<span
+class="math inline">\(d_l\)</span> 对 <span
+class="math inline">\(I_r\)</span> warp 得到 <span
+class="math inline">\(\overset{\sim}{I_l}\)</span> 。</p>
+<p>推理时只需要<span class="math inline">\(d_r\)</span>
+，将左视图转为右视图。但实际上不需要转换到<span
+class="math inline">\(I_r\)</span> ,求得深度图即可。</p>
+<p><strong>ps</strong>:
+如果只是单方向的估计，使用这种双向的Loss会不会有提升？<strong>monodepth</strong>估计单向的变换，训练时估计了双向的变换，但输入到网络的只有左视图。单图深度估计
+——&gt; 类比到双目深度估计，Flickr上可以做，但rgb-nir上是单向估计。</p>
+<h3 id="loss">Loss</h3>
+<h4 id="photometric-image-reconstruction-cost">photometric image
+reconstruction cost</h4>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161507047.png"
+alt="image-20240816150744004" />
+<figcaption aria-hidden="true">image-20240816150744004</figcaption>
+</figure>
+<p>图像之间的Loss</p>
+<h4 id="disparity-smoothness-loss">Disparity Smoothness Loss</h4>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161510126.png"
+alt="image-20240816151044094" />
+<figcaption aria-hidden="true">image-20240816151044094</figcaption>
+</figure>
+<h4 id="left-right-disparity-consistency-loss">Left-Right Disparity
+Consistency Loss</h4>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161512911.png"
+alt="image-20240816151234887" />
+<figcaption aria-hidden="true">image-20240816151234887</figcaption>
+</figure>
+<p><span class="math inline">\(d^l_{ij}\)</span> 表示右视图<span
+class="math inline">\(I^r\)</span> 的像素位置 (i,j)
+应该偏移的位移量，</p>
+<p><span class="math inline">\(d^r\)</span> 表示左视图 <span
+class="math inline">\(I^l\)</span> 向右视图 <span
+class="math inline">\(I^r\)</span>变换的视差 <img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161529197.jpg"
+alt="Screenshot_2024-08-16-15-29-10-304_com.orion.note" /></p>
+<h2 id="monodepth-v2">monodepth v2</h2>
+<p>相较于v1，<strong>photometric reprojection error</strong> 取的
+最小值，而不是均值。 <span class="math display">\[
+L_p = \sum_{t^{&#39;}} pe(I_t, I_{t&#39; \rightarrow t}), \\
+I_{t&#39;\rightarrow t} = I_{t&#39;}&lt;proj(D_t, T_{t\rightarrow
+t&#39;}, K)&gt;  \\
+pe(I_a, I_b) = \frac{\alpha}{2}(1 - SSIM(I_a, I_b)) + (1 - \alpha) ||I_a
+- I_b||
+\]</span></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408151416839.png"
+alt="image-20240815141604780" />
+<figcaption aria-hidden="true">image-20240815141604780</figcaption>
+</figure>
+<h3 id="auto-mask">auto mask</h3>
+<h2 id="具体变换过程">具体变换过程</h2>
+<p>pose net: 输出得到axisangle的三个参数
+三个轴的夹角，和平移translation的三个参数。</p>
+<p><strong>axisangle</strong>: (Bx1x3)</p>
+<p>将夹角转换为4x4矩阵。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">transformation_from_parameters</span>(<span class="params">axisangle, translation, invert=<span class="literal">False</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Convert the network&#x27;s (axisangle, translation) output into a 4x4 matrix</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    R = rot_from_axisangle(axisangle)   <span class="comment"># (Bx4x4)</span></span><br><span class="line">    t = translation.clone()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> invert:</span><br><span class="line">        R = R.transpose(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">        t *= -<span class="number">1</span></span><br><span class="line"></span><br><span class="line">    T = get_translation_matrix(t)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> invert:</span><br><span class="line">        M = torch.matmul(R, T)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        M = torch.matmul(T, R)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> M</span><br></pre></td></tr></table></figure>
+<p>先平移再旋转。</p>
+<h2 id="other">other</h2>
+<h3
+id="从左视图转到右视图的像素坐标系需要左右两个视图的深度信息么">从左视图转到右视图的像素坐标系，需要左右两个视图的深度信息么？？</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161453981.jpg"
+alt="Screenshot_2024-08-16-14-53-12-942_com.orion.note" />
+<figcaption
+aria-hidden="true">Screenshot_2024-08-16-14-53-12-942_com.orion.note</figcaption>
+</figure>
+<p>如果没有其他假设，相当于需要左右相机的内参，如果左右内参一致就是
+<strong>1.1.2</strong> 的情况，成像面平行。<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408161457853.jpg"
+alt="Screenshot_2024-08-16-14-57-12-586_com.orion.note" /></p>
+<p>内参与 物体的深度 <span
+class="math inline">\(z_C\)</span>、和相机焦距 <span
+class="math inline">\(f\)</span> 相关。</p>
+<h3
+id="深度估计内参姿态估计pose外参-变换得到另一视图的图像">深度估计（内参）+姿态估计pose（外参)
+变换得到另一视图的图像。</h3>
 
       
     </div>
@@ -255,7 +358,7 @@ alt="image-20240603173102380" />
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/github-picgo-typora%E5%9B%BE%E5%BA%8A%E9%85%8D%E7%BD%AE/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/08/ArkTS/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -269,7 +372,7 @@ alt="image-20240603173102380" />
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/05/29/github-picgo-typora%E5%9B%BE%E5%BA%8A%E9%85%8D%E7%BD%AE/" class="post-title-link" itemprop="url">github+picgo+typora图床配置</a>
+            <a href="/2024/08/08/ArkTS/" class="post-title-link" itemprop="url">ArkTS</a>
         </h2>
 
         <div class="post-meta">
@@ -280,7 +383,7 @@ alt="image-20240603173102380" />
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-05-29 19:36:13 / 修改时间：20:01:31" itemprop="dateCreated datePublished" datetime="2024-05-29T19:36:13+08:00">2024-05-29</time>
+              <time title="创建时间：2024-08-08 14:09:54 / 修改时间：15:07:46" itemprop="dateCreated datePublished" datetime="2024-08-08T14:09:54+08:00">2024-08-08</time>
             </span>
 
           
@@ -294,109 +397,342 @@ alt="image-20240603173102380" />
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="github">Github</h2>
-<ol type="1">
-<li>新建一个仓库，选择Public，其他都不需要。</li>
-<li>点击设置的developer settings</li>
-</ol>
+          <h2 id="basic">basic</h2>
+<h3 id="函数">函数</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">buy</span>(<span class="params">price: number, num: number</span>)&#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="attr">result</span>: number = price * num</span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="箭头函数">箭头函数</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="title function_">buy</span> = (<span class="params">price: number, num: number</span>) =&gt; &#123;</span><br><span class="line">	<span class="keyword">let</span> <span class="attr">result</span>: number = price * num</span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="接口对象">接口&amp;对象</h3>
+<p>1.通过Interface 接口约定<strong>对象结构类型</strong></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">interface <span class="title class_">Person</span> &#123;</span><br><span class="line">	<span class="attr">name</span>: string</span><br><span class="line">	<span class="attr">age</span>: number</span><br><span class="line">	<span class="attr">weight</span>: number</span><br><span class="line">    <span class="attr">sing</span>: <span class="function">(<span class="params">song: string</span>) =&gt;</span> <span class="keyword">void</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.定义对象并使用</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="attr">persion</span>: <span class="title class_">Person</span> = &#123;</span><br><span class="line">	<span class="attr">name</span>: <span class="string">&#x27;kurisu&#x27;</span>,</span><br><span class="line">	<span class="attr">age</span>: <span class="number">18</span>,</span><br><span class="line">	<span class="attr">weight</span>: <span class="number">90</span></span><br><span class="line">    <span class="attr">sing</span>: <span class="function">(<span class="params">song: string</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(song)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">person.<span class="title function_">sing</span>(<span class="string">&#x27;song&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="联合类型">联合类型</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="attr">judge</span>: numebr | string = <span class="number">100</span></span><br></pre></td></tr></table></figure>
+<p>限定变量值：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="attr">gender</span>: <span class="string">&#x27;man&#x27;</span> | <span class="string">&#x27;woman&#x27;</span> | <span class="string">&#x27;secret&#x27;</span> = <span class="string">&#x27;man&#x27;</span></span><br></pre></td></tr></table></figure>
+<h3 id="枚举类型">枚举类型</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">enum <span class="title class_">ThemeColor</span> &#123;</span><br><span class="line">  <span class="title class_">Red</span> = <span class="string">&#x27;#ff0f29&#x27;</span>,</span><br><span class="line">  <span class="title class_">Orange</span> = <span class="string">&#x27;#ff7100&#x27;</span>,</span><br><span class="line">  <span class="title class_">Green</span> = <span class="string">&#x27;#30b30e&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="attr">color</span>: <span class="title class_">ThemeColor</span> = <span class="title class_">ThemeColor</span>.<span class="property">Red</span></span><br></pre></td></tr></table></figure>
+<h3 id="图片组件">图片组件</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1.网络图片加载</span></span><br><span class="line">    <span class="comment">// Column()&#123;</span></span><br><span class="line">    <span class="comment">//   Image(&#x27;https://www.itheima.com/images/logo.png&#x27;)</span></span><br><span class="line">    <span class="comment">//     .width(200)</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">    <span class="comment">//2.本地图片加载 Image( $r(&#x27;app.media.文件名&#x27;) )</span></span><br><span class="line">    <span class="title class_">Column</span>()&#123;</span><br><span class="line">      <span class="title class_">Image</span>($r(<span class="string">&#x27;app.media.startIcon&#x27;</span>))</span><br><span class="line">        .<span class="title function_">width</span>(<span class="number">200</span>)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="输入框和按钮">输入框和按钮</h3>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291940308.png"
-alt="image-20240529194015223" />
-<figcaption aria-hidden="true">image-20240529194015223</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408081507220.png"
+alt="image-20240808150735192" />
+<figcaption aria-hidden="true">image-20240808150735192</figcaption>
 </figure>
-<p>3.选择Personal access tokens的 Tokens(classic)选项。</p>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291944073.png"
-alt="image-20240529194453985" />
-<figcaption aria-hidden="true">image-20240529194453985</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202408081507146.png"
+alt="image-20240808150742114" />
+<figcaption aria-hidden="true">image-20240808150742114</figcaption>
 </figure>
-<p>4.点击<strong>Generate new token (classic)</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/05/%E5%85%89%E6%B5%81Optical-Flow-ECCV2020-RAFT/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/08/05/%E5%85%89%E6%B5%81Optical-Flow-ECCV2020-RAFT/" class="post-title-link" itemprop="url">光流Optical Flow:ECCV2020 RAFT</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-08-05 15:55:02 / 修改时间：15:55:16" itemprop="dateCreated datePublished" datetime="2024-08-05T15:55:02+08:00">2024-08-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/23/240723-SCPNet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/07/23/240723-SCPNet/" class="post-title-link" itemprop="url">240723-SCPNet</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-23 13:00:10" itemprop="dateCreated datePublished" datetime="2024-07-23T13:00:10+08:00">2024-07-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-08-05 09:55:33" itemprop="dateModified" datetime="2024-08-05T09:55:33+08:00">2024-08-05</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="previous-work">Previous work</h2>
+<h3 id="cross-modal-intensity-based-learning">Cross-modal
+intensity-based learning</h3>
+<h3 id="multi-task-learning">Multi-task Learning</h3>
+<p><strong>多任务学习是一种联合学习，多个任务并行学习，结果相互影响。</strong></p>
+<p>目前多任务学习方法大致可以总结为两类，<strong>一是不同任务之间共享相同的参数（common
+parameter）</strong>，<strong>二是挖掘不同任务之间隐藏的共有数据特征（latent
+feature）</strong>。</p>
+<p><strong>SCPNet</strong>可以看作同时做<strong>模态内单应性估计</strong>和<strong>跨模态单应性估计</strong>任务。</p>
+<h2 id="method">Method</h2>
+<h3 id="finding">Finding</h3>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291945994.png"
-alt="image-20240529194527955" />
-<figcaption aria-hidden="true">image-20240529194527955</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407271052074.png"
+alt="image-20240727105243044" />
+<figcaption aria-hidden="true">image-20240727105243044</figcaption>
 </figure>
-<p>5.设置 Expiration 为 no expiration，永不过期。</p>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947857.png"
-alt="image-20240529194708828" />
-<figcaption aria-hidden="true">image-20240529194708828</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407271052486.png"
+alt="image-20240727105225425" />
+<figcaption aria-hidden="true">image-20240727105225425</figcaption>
 </figure>
-<p>6.在Select scopes选项中只勾选repo仓库一栏。</p>
+<p>受多任务学习的启发，使用模态内监督的Loss来帮助训练。中间跨模态Loss的是主体，两边对模态内的warp是辅助。</p>
+<p><strong>在Train阶段，由于是共享参数，模态内的监督训练对CFMP和Homography
+Estimation Network都会有影响。</strong> 并且模态内的监督<span
+class="math inline">\(P_A&#39;, P_A\)</span>
+之间计算的Loss，相互之间也存在关联。</p>
+<h3 id="network">Network</h3>
+<figure>
+<img src="C:\Users\Administrator\Desktop\202407241416861.png"
+alt="image-20240724141613778" />
+<figcaption aria-hidden="true">image-20240724141613778</figcaption>
+</figure>
+<p>我的理解：主要是跨模态图像<span class="math inline">\(I_A,
+I_B\)</span>
+的无监督训练，无监督训练的Loss仅在特征上计算。然后融入模态内监督任务的有效信息。</p>
+<p>推理时只使用跨模态的部分，把计算的<span
+class="math inline">\(H_{AB}\)</span> （实际上计算的是四个Corner
+point的偏移量），计算<strong>mace</strong> <span class="math display">\[
+mace = \frac{\sqrt{\sum_{i=1}^{4} (pred[i] - gt[i])^2 }}{4}
+\]</span></p>
+<h4
+id="correlation-based-homography-estimation-network">Correlation-based
+Homography Estimation Network</h4>
+<figure>
+<img src="C:\Users\Administrator\Desktop\HEN"
+alt="image-20240723142702919" />
+<figcaption aria-hidden="true">image-20240723142702919</figcaption>
+</figure>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291947020.png"
-alt="image-20240529194743988" />
-<figcaption aria-hidden="true">image-20240529194743988</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231428118.png"
+alt="image-20240723142838086" />
+<figcaption aria-hidden="true">image-20240723142838086</figcaption>
 </figure>
-<p>7.接下来你会得到一个token用于picgo，记得先把token保存，只有第一次能显示token。</p>
+<p><span class="math inline">\(图像A, B经过Feature Extractor\)</span>
+得到<span class="math inline">\(F_A, F_B\)</span> 。<span
+class="math inline">\(C(x, r)\)</span> 表示</p>
+<h4 id="intra-modal-self-supervised-learning">Intra-modal
+Self-supervised learning</h4>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291949585.png"
-alt="image-20240529194911560" />
-<figcaption aria-hidden="true">image-20240529194911560</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231432283.png"
+alt="image-20240723143214250" />
+<figcaption aria-hidden="true">image-20240723143214250</figcaption>
 </figure>
-<h2 id="picgo">Picgo</h2>
-<p>1.在github上找到picgo的release：<a
-target="_blank" rel="noopener" href="https://github.com/Molunerfinn/PicGo/releases/tag/v2.3.1">Release
-2.3.1 · Molunerfinn/PicGo (github.com)</a></p>
-<p>2.下载setup.exe文件，并安装。</p>
+<p>这里<span class="math inline">\(\psi_\xi\)</span>
+指的是带<strong>Correlation</strong>的单应矩阵估计网络，Intr-modal指的估计网络输入的是同一模态的warp。</p>
+<h4
+id="correlation-and-consistent-feature-map-projection">C<strong>orrelation</strong>
+and consistent feature map projection</h4>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291951953.png"
-alt="image-20240529195123916" />
-<figcaption aria-hidden="true">image-20240529195123916</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231445145.png"
+alt="image-20240723144511106" />
+<figcaption aria-hidden="true">image-20240723144511106</figcaption>
 </figure>
-<p>3.下好后你会看到这个界面</p>
+<p>动机？？？</p>
+<h3 id="loss-function">Loss Function</h3>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291952886.png"
-alt="image-20240529195233843" />
-<figcaption aria-hidden="true">image-20240529195233843</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231502138.png"
+alt="image-20240723150239096" />
+<figcaption aria-hidden="true">image-20240723150239096</figcaption>
 </figure>
-<p>选择图床设置-github：</p>
-<figure>
-<img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291953545.png"
-alt="image-20240529195313508" />
-<figcaption aria-hidden="true">image-20240529195313508</figcaption>
-</figure>
+<h2 id="experiment">Experiment</h2>
+<h3 id="dataset">dataset</h3>
 <ul>
-<li><p>仓库名为 username/reponame</p></li>
-<li><p>分支名一般为默认的 master</p></li>
-<li><p>token为以上github生成的token</p></li>
-<li><p>存储路径随意</p></li>
-<li><p>自定义域名：cdn加速，格式为
-https://jsd.onmicrosoft.cn/gh/[username]/[reponame]</p></li>
+<li>GoogleMap</li>
+<li>Flash/no-Flash</li>
+<li>Harvard</li>
+<li>RGB/NIR</li>
+<li>manually-made inconsistent dataset <strong>PDS-COCO</strong></li>
 </ul>
-<h2 id="typora">Typora</h2>
-<p>1.要在typora中应用上传图片到图床，需要打开菜单栏的<strong>文件-偏好设置-图像</strong></p>
+<h3 id="ablation">Ablation</h3>
+<h2 id="question">Question</h2>
+<h3 id="flickr-引导和去噪算是不同模态的么">Flickr
+引导和去噪算是不同模态的么？</h3>
+<p>对模态的定义？？</p>
+<p>像GoogleMap使用的是 谷歌地图 和
+对应的卫星图像，RGBNIR是RGB、NIR图像对。</p>
+<h3 id="scpnet">SCPNet</h3>
+<p>对ImgB进行warp，得到真值的 H （或者说corner
+points的偏移)。网络通过输入warp后的ImgB，和另一模态的ImgA，预测ImgB</p>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291957585.png"
-alt="image-20240529195726534" />
-<figcaption aria-hidden="true">image-20240529195726534</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407241541695.png"
+alt="image-20240724154117641" />
+<figcaption aria-hidden="true">image-20240724154117641</figcaption>
 </figure>
-<p>2.修改<strong>插入图片时</strong>的动作为上传图片</p>
+<p>网络模型上写的是对<span class="math inline">\(F_B\)</span> 应用<span
+class="math inline">\(H_{AB}\)</span></p>
+<h3 id="关于googlemap数据集">关于GoogleMap数据集</h3>
+<p>SCPNet提到使用的GoogleMap数据集，引用的CVPR2021论文<strong>Deep
+Lucas-Kanade homography for multimodal image alignment.</strong>
+这个论文使用的GoogleMap是使用Google的API随机采样出来的。</p>
+<p>Q：下载下来的大小就是Input为192x192，template
+original为128x128，还需要预处理的代码。但是SCPNet的代码处理里有Crop
+成192x192的部分。是自己采集的数据么？？？</p>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958499.png"
-alt="image-20240529195812450" />
-<figcaption aria-hidden="true">image-20240529195812450</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407271527016.png"
+alt="image-20240727144909195" />
+<figcaption aria-hidden="true">image-20240727144909195</figcaption>
 </figure>
-<p>3.接下来选择<strong>上传服务</strong>：Picgo(app)</p>
+<p>Q：代码里原始读入的是 (Img1, Img2) 经过syn_homo函数将<span
+class="math inline">\(img2\)</span> warp</p>
+<p>模态内监督的输入为 syn_homo(img2,
+self.transform(image=img2)['image'])，稍微对img2做一点变化再进行warp。</p>
+<p>那这边这个图是不是中间加个warp？？</p>
+<p>Q：这个<span class="math inline">\(I_B\)</span> , img2
+本身就是扭曲的图像么？</p>
+<p><strong>input:</strong></p>
 <figure>
 <img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291958868.png"
-alt="image-20240529195849843" />
-<figcaption aria-hidden="true">image-20240529195849843</figcaption>
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261519732.png"
+alt="image-20240726151906588" />
+<figcaption aria-hidden="true">image-20240726151906588</figcaption>
 </figure>
-<p>路径为你所下载的Picgo.exe。</p>
-<p>然后就完成了，这样在插入截屏的图片时就会自动上传图片到图床，并且引用也会自动更改，用hexo更新的博客就没问题了。</p>
+<p><strong>template:</strong></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261518226.png"
+alt="image-20240726151852068" />
+<figcaption aria-hidden="true">image-20240726151852068</figcaption>
+</figure>
+<h3
+id="单应性变换对于深度忽略不计的假设">单应性变换对于深度忽略不计的假设</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261626127.png"
+alt="image-20240726162610086" />
+<figcaption aria-hidden="true">image-20240726162610086</figcaption>
+</figure>
+<p>单应性矩阵因为是对成像的物体所在的平面，整体都做<strong>H</strong>
+变换映射到另一个平面，也就是说原图像的每一个点都应用同一种变换操作，所以深度的差异会导致单应性变换不成立。</p>
+<h3 id="可视化">可视化</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407271535434.png"
+alt="image-20240727151232251" />
+<figcaption aria-hidden="true">image-20240727151232251</figcaption>
+</figure>
+<p><strong>Green polygons denote the ground-truth homography deformation
+from IB (source, the deformed image) to IA (target).</strong></p>
+<p>Groud-truth是<span class="math inline">\(I_B\)</span> warp
+后得到的，估计的Corner points。开始warp应用的是<span
+class="math inline">\(H_{inverse}\)</span>, GT 是 <span
+class="math inline">\(H\)</span> ，对<span class="math inline">\(warp
+后的 I_B 应用H\)</span> ,</p>
+<p>如果<span class="math inline">\(I_A, I_B\)</span>
+结构是对齐的，说得通，不对齐呢？</p>
+<h3 id="服务器224">服务器224</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407290959811.png"
+alt="image-20240729095901731" />
+<figcaption aria-hidden="true">image-20240729095901731</figcaption>
+</figure>
+<h2 id="record">record</h2>
+<p>resize网络的Corner point得到H矩阵，对Flickr数据集处理</p>
 
       
     </div>
@@ -416,7 +752,7 @@ alt="image-20240529195849843" />
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/Diffuser%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/20/Python-Spider/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -430,7 +766,7 @@ alt="image-20240529195849843" />
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/05/29/Diffuser%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B/" class="post-title-link" itemprop="url">Diffuser部署示例</a>
+            <a href="/2024/07/20/Python-Spider/" class="post-title-link" itemprop="url">Python-Spider</a>
         </h2>
 
         <div class="post-meta">
@@ -441,7 +777,7 @@ alt="image-20240529195849843" />
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-05-29 15:19:24 / 修改时间：16:56:21" itemprop="dateCreated datePublished" datetime="2024-05-29T15:19:24+08:00">2024-05-29</time>
+              <time title="创建时间：2024-07-20 10:43:35 / 修改时间：10:43:42" itemprop="dateCreated datePublished" datetime="2024-07-20T10:43:35+08:00">2024-07-20</time>
             </span>
 
           
@@ -455,91 +791,7 @@ alt="image-20240529195849843" />
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>参考文章：<a
-target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1719357040261251072">[Diffusers代码级讲解（绪论）——
-Diffusers快速上手 - 知乎
-(zhihu.com)](https://zhuanlan.zhihu.com/p/672574978)</a></p>
-<h2 id="huggingface相关前置配置">Huggingface相关前置配置</h2>
-<h3 id="huggingface-access-token">Huggingface Access token</h3>
-<figure>
-<img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291655699.png"
-alt="image-20240529153917288" />
-<figcaption aria-hidden="true">image-20240529153917288</figcaption>
-</figure>
-<p>在Huggingface上点击个人设置里的<strong>Access Tokens</strong>,
-然后点击<strong>New
-token</strong>，选择<strong>read</strong>。然后就得到了一串token，后续用于<strong>huggingface-cli</strong>
-工具下载模型。</p>
-<h3 id="huggingface-cli-和镜像源配置">Huggingface-cli 和镜像源配置</h3>
-<p>参考网页中的方法二: <a
-target="_blank" rel="noopener" href="https://hf-mirror.com/">https://hf-mirror.com/</a></p>
-<p>1.安装依赖</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
-<p>2.设置环境变量</p>
-<p>Linux: 在 ~/.bashrc下添加</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HF_ENDPOINT=https://hf-mirror.com</span><br></pre></td></tr></table></figure>
-<p>然后记得更新配置, 命令行输入：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
-<p>3.下载模型</p>
-<p>这部分放到后边再说。更多的命令请参考<a
-target="_blank" rel="noopener" href="https://huggingface.co/docs/huggingface_hub/main/en/guides/cli#huggingface-cli-download">Command
-Line Interface (CLI) (huggingface.co)</a></p>
-<h2 id="githubhuggingfacediffusers">github/huggingface/diffusers</h2>
-<p>这部分我们来安装diffuser和部署stable-diffusion-v1-5。</p>
-<h3 id="安装依赖">安装依赖</h3>
-<p>首先根据 <a
-target="_blank" rel="noopener" href="https://github.com/huggingface/diffusers">huggingface/diffusers:
-🤗 Diffusers: State-of-the-art diffusion models for image and audio
-generation in PyTorch and FLAX</a> 安装所需的库：</p>
-<p>安装diffuser所需的torch：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[torch]</span><br></pre></td></tr></table></figure>
-<p>使用conda安装的话貌似安装的版本比较老，torch1.12的。pip安装的为官方包。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conda install -c conda-forge diffusers</span><br></pre></td></tr></table></figure>
-<p>安装Flax：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install --upgrade diffusers[flax]</span><br></pre></td></tr></table></figure>
-<p>可能还要安装一个 transformers 库</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install transformers</span><br></pre></td></tr></table></figure>
-<h3 id="下载模型">下载模型</h3>
-<p>这里使用的模型我们就用<a
-target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/672574978">Diffusers代码级讲解（绪论）——
-Diffusers快速上手 - 知乎 (zhihu.com)</a>
-使用的stable-diffusion-v1-5。</p>
-<p>huggingface-cli download
-命令可以下载整个仓库，也可以下载多个文件，但不支持下载文件夹。</p>
-<p>下面是我下载所需文件所用的bash脚本：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">HUGGING_FACE_TOKEN=<span class="string">&quot;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&quot;</span></span><br><span class="line">MODEL_NAME=<span class="string">&quot;runwayml/stable-diffusion-v1-5&quot;</span></span><br><span class="line">OUTPUT_DIR=<span class="string">&quot;./stable-diffusion-v1-5&quot;</span></span><br><span class="line"><span class="comment"># 登录到 Hugging Face CLI</span></span><br><span class="line">huggingface-cli login --token <span class="variable">$HUGGING_FACE_TOKEN</span></span><br><span class="line"><span class="comment"># 创建输出目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$OUTPUT_DIR</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载模型</span></span><br><span class="line"><span class="comment"># huggingface-cli repo download $MODEL_NAME --local-dir $OUTPUT_DIR</span></span><br><span class="line"><span class="comment"># 下载模型文件</span></span><br><span class="line"></span><br><span class="line">(</span><br><span class="line">  huggingface-cli download <span class="variable">$MODEL_NAME</span> \</span><br><span class="line">    feature_extractor/preprocessor_config.json \</span><br><span class="line">    model_index.json \</span><br><span class="line">    tokenizer/merges.txt \</span><br><span class="line">    tokenizer/special_tokens_map.json \</span><br><span class="line">    tokenizer/tokenizer_config.json \</span><br><span class="line">    tokenizer/vocab.json \</span><br><span class="line">    scheduler/scheduler_config.json \</span><br><span class="line">    unet/config.json \</span><br><span class="line">    unet/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    vae/config.json \</span><br><span class="line">    vae/diffusion_pytorch_model.fp16.bin \</span><br><span class="line">    text_encoder/config.json \</span><br><span class="line">    text_encoder/pytorch_model.fp16.bin \</span><br><span class="line">    safety_checker/config.json \</span><br><span class="line">    safety_checker/pytorch_model.fp16.bin \</span><br><span class="line">    --local-dir <span class="variable">$OUTPUT_DIR</span> \</span><br><span class="line">)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Model downloaded to <span class="variable">$OUTPUT_DIR</span>&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>里边的HUGGING_FACE_TOKEN就是前边生成的access
-token。这里我直接写成硬编码直接赋值了。</p>
-<p>如果不设置 <strong>--local-dir</strong> 选项，下载的模型会存在
-.cache/huggingface下.</p>
-<p>下载结果大概是这样：</p>
-<figure>
-<img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291654405.png"
-alt="image-20240529160603147" />
-<figcaption aria-hidden="true">image-20240529160603147</figcaption>
-</figure>
-<p>前边部分的下载没有保存，实际上会执行很多文件的下载。</p>
-<h3 id="测试运行">测试运行</h3>
-<p>创建一个程序test.py</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> diffusers <span class="keyword">import</span> DiffusionPipeline</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">pipeline = DiffusionPipeline.from_pretrained(<span class="string">&#x27;./stable-diffusion-v1-5/&#x27;</span> ,torch_dtype=torch.float16, variant=<span class="string">&#x27;fp16&#x27;</span>)</span><br><span class="line">pipeline.to(<span class="string">&quot;cuda&quot;</span>)</span><br><span class="line"></span><br><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br><span class="line">image = pipeline(prompt).images[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">image.save(<span class="string">&quot;./output.jpg&quot;</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>from_pretrained的第一个参数是模型名称或者下载到本地的文件夹名称。</p>
-<p>然后测试程序：</p>
-<figure>
-<img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656156.png"
-alt="image-20240529160845903" />
-<figcaption aria-hidden="true">image-20240529160845903</figcaption>
-</figure>
-<p>可以看到执行完成，当前同一目录下会有一个output.jpg图片。</p>
-<figure>
-<img
-src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202405291656157.png"
-alt="image-20240529160924523" />
-<figcaption aria-hidden="true">image-20240529160924523</figcaption>
-</figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prompt = <span class="string">&quot;An image of a squirrel in Picasso style&quot;</span></span><br></pre></td></tr></table></figure>
+          
 
       
     </div>
@@ -559,7 +811,7 @@ alt="image-20240529160924523" />
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/my-first-blog/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/11/codeforce-learning/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -573,7 +825,7 @@ alt="image-20240529160924523" />
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/05/29/my-first-blog/" class="post-title-link" itemprop="url">my-first-blog</a>
+            <a href="/2024/07/11/codeforce-learning/" class="post-title-link" itemprop="url">codeforce_learning</a>
         </h2>
 
         <div class="post-meta">
@@ -584,7 +836,7 @@ alt="image-20240529160924523" />
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-05-29 14:59:35 / 修改时间：16:18:13" itemprop="dateCreated datePublished" datetime="2024-05-29T14:59:35+08:00">2024-05-29</time>
+              <time title="创建时间：2024-07-11 13:09:59 / 修改时间：18:04:56" itemprop="dateCreated datePublished" datetime="2024-07-11T13:09:59+08:00">2024-07-11</time>
             </span>
 
           
@@ -598,16 +850,58 @@ alt="image-20240529160924523" />
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="my-first-blog">My first blog</h1>
-<p>文章参考：<a
-target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.html">【基础篇】hexo博客搭建教程</a></p>
-<p>省流，配置完成后。</p>
-<p>创建博客:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new <span class="string">&quot;myblog&quot;</span></span><br></pre></td></tr></table></figure>
-<p>预览效果:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
-<p>push上传到github</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo g &amp;&amp; hexo d</span><br></pre></td></tr></table></figure>
+          <h2 id="桥-bridge">桥 Bridge</h2>
+<h3 id="定义">定义</h3>
+<p><strong>桥（割边）</strong>：对于一个无向图，如果删掉一条边后图中的连通分量数增加了，则称这条边为桥或者割边。</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407111322824.png"
+alt="image-20240711132232780" />
+<figcaption aria-hidden="true">image-20240711132232780</figcaption>
+</figure>
+<p>考虑以任意点为起点对无向图进行DFS序，黑色和绿色边为<strong>树上边</strong>，红色为<strong>非树上边</strong>，每条<strong>红色</strong>边都<strong>覆盖</strong>了树上的一条简单路径，被覆盖的边为<strong>绿色边</strong>，不被覆盖的边为<strong>黑色边</strong>。</p>
+<h3 id="如何找桥">如何找桥</h3>
+<p>显然，绿色边的树边和红色的非树边一定不是桥（删除一条绿色或红色边都会有对应的红色、绿色边联通另一条路径），黑色的树边一定是桥。</p>
+<p>这个过程就转化为寻找黑色的树边。</p>
+<p><strong>朴素做法</strong>：<span
+class="math display">\[O(nm)\]</span> ,
+对于每一条非树边，都逐个地将它覆盖的每一条树边置成绿色。</p>
+<p><strong>优化</strong>：使用差分。对于每一条非树边，在其树上深度较小的点处打上<span
+class="math display">\[\bold{-1}\]</span>
+标记，在其深度较大的点处打上<span
+class="math display">\[\bold{+1}\]</span> 标记。然后<span
+class="math inline">\(O(n)\)</span>求出每个点的子树内部的标记之和。对于一个点<span
+class="math inline">\(u\)</span>，其子树内部的标记之和等于覆盖了<strong><span
+class="math inline">\(u\)</span>和<span
+class="math inline">\(u\)</span>的父亲之间的树边的非树边数量</strong>。若这个值非0，则<span
+class="math inline">\(u\)</span>和<span
+class="math inline">\(u\)</span>的父亲之间的树边不是桥，否则是桥。</p>
+<p>2.tarjan求割边。</p>
+<p><strong>复杂度</strong>：<span class="math display">\[O(n + m)
+\]</span>
+求出每条边是否是桥后，两个点是边双连通的，当且仅当它们的树上路径<strong>不</strong>包含桥。</p>
+<p>参考<a target="_blank" rel="noopener" href="https://oi-wiki.org/graph/bcc/">双连通分量 - OI Wiki
+(oi-wiki.org)</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> low[MAXN], dfn[MAXN], dfs_clock;</span><br><span class="line"><span class="type">bool</span> isbridge[MAXN];</span><br><span class="line">vector&lt;<span class="type">int</span>&gt; G[MAXN];</span><br><span class="line"><span class="type">int</span> cnt_bridge;</span><br><span class="line"><span class="type">int</span> father[MAXN];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">tarjan</span><span class="params">(<span class="type">int</span> u, <span class="type">int</span> fa)</span> </span>&#123;</span><br><span class="line">  father[u] = fa;</span><br><span class="line">  low[u] = dfn[u] = ++dfs_clock;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; G[u].<span class="built_in">size</span>(); i++) &#123;</span><br><span class="line">    <span class="type">int</span> v = G[u][i];</span><br><span class="line">    <span class="keyword">if</span> (!dfn[v]) &#123;</span><br><span class="line">      <span class="built_in">tarjan</span>(v, u);</span><br><span class="line">      low[u] = <span class="built_in">min</span>(low[u], low[v]);</span><br><span class="line">      <span class="keyword">if</span> (low[v] &gt; dfn[u]) &#123; <span class="comment">//表明v不经过u就不能访问u的父节点,(v, u)是一条割边</span></span><br><span class="line">        isbridge[v] = <span class="literal">true</span>;</span><br><span class="line">        ++cnt_bridge;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (dfn[v] &lt; dfn[u] &amp;&amp; v != fa) &#123; <span class="comment">// dfn[v] != 0 说明v已经遍历过，存在回边或重边，需要更新low[u] = min(low[u], dfn[v]), 此时(u,v)不再为割边。</span></span><br><span class="line">      low[u] = <span class="built_in">min</span>(low[u], dfn[v]); <span class="comment">//重边的情况，</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="f.-non-academic-problem"><a
+target="_blank" rel="noopener" href="https://codeforces.com/contest/1986/problem/F">1986F. Non-academic
+Problem</a></h3>
+<p>无向图，删除一条边，要使得删除后得到的两个连通分量的式子最大化。</p>
+<p>假设无向图点数为<span class="math inline">\(n\)</span>，边为<span
+class="math inline">\(m\)</span>, 删除后得到的连通分量的顶点个数为<span
+class="math inline">\(x, y\)</span>,满足<span class="math inline">\(x +
+y = n\)</span>，</p>
+<p>要最大化 <span class="math display">\[
+\frac{x(x-1)}{2} + \frac{y(y - 1)}{2} \\
+\]</span>
+只要判断(u,v)是否为桥，计算一个节点的子树siz的顶点个数即可。不存在桥的答案则为<span
+class="math inline">\((n - 1)n/2\)</span></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">typedef</span> <span class="type">long</span> <span class="type">long</span> ll;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> maxn = <span class="number">2e5</span> + <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">tarjan</span><span class="params">(<span class="type">int</span> u, <span class="type">int</span> fa, vector&lt;<span class="type">int</span>&gt; vec[], vector&lt;<span class="type">int</span>&gt;&amp; low, vector&lt;<span class="type">int</span>&gt;&amp; dfn, <span class="type">int</span> father[], <span class="type">int</span> siz[], vector&lt;<span class="type">bool</span>&gt;&amp; isbridge, <span class="type">int</span> &amp;dfn_count)</span></span>&#123;</span><br><span class="line">    father[u] = fa;</span><br><span class="line">    low[u] = dfn[u] = ++dfn_count;</span><br><span class="line">    siz[u] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; vec[u].<span class="built_in">size</span>(); i++)&#123;</span><br><span class="line">        <span class="type">int</span> v = vec[u][i];</span><br><span class="line">        <span class="keyword">if</span>(!dfn[v])&#123;</span><br><span class="line">            <span class="built_in">tarjan</span>(v, u, vec, low, dfn, father, siz, isbridge, dfn_count);</span><br><span class="line">            siz[u] += siz[v];</span><br><span class="line">            low[u] = <span class="built_in">min</span>(low[u], low[v]);</span><br><span class="line">            <span class="keyword">if</span>(low[v] &gt; dfn[u])&#123;</span><br><span class="line">                isbridge[v] = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span>(dfn[v] &lt; dfn[u] &amp;&amp; v != fa)&#123;</span><br><span class="line">            low[u] = <span class="built_in">min</span>(low[u], dfn[v]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">getans</span><span class="params">(<span class="type">int</span> u, vector&lt;<span class="type">bool</span>&gt;&amp; vis, ll&amp; ans, <span class="type">int</span> n, vector&lt;<span class="type">int</span>&gt; vec[], <span class="type">int</span> siz[], vector&lt;<span class="type">bool</span>&gt;&amp; isbridge)</span></span>&#123;</span><br><span class="line">    vis[u] = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; vec[u].<span class="built_in">size</span>(); i++)&#123;</span><br><span class="line">        <span class="type">int</span> v = vec[u][i];</span><br><span class="line">        <span class="keyword">if</span>(!vis[v])&#123;</span><br><span class="line">            <span class="keyword">if</span>(isbridge[v])&#123;</span><br><span class="line">                ll x = siz[v], y = n - siz[v];</span><br><span class="line">                ans = <span class="built_in">min</span>(ans, x * (x - <span class="number">1</span>) / <span class="number">2</span> + y * (y - <span class="number">1</span>) / <span class="number">2</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">getans</span>(v, vis, ans, n, vec, siz, isbridge);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">solve</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> n, m;</span><br><span class="line">    cin &gt;&gt; n &gt;&gt; m;</span><br><span class="line">    vector&lt;<span class="type">int</span>&gt; vec[n + <span class="number">1</span>];</span><br><span class="line">    <span class="function">vector&lt;<span class="type">int</span>&gt; <span class="title">low</span><span class="params">(n + <span class="number">1</span>, n + <span class="number">1</span>)</span>, <span class="title">dfn</span><span class="params">(n + <span class="number">1</span>, <span class="number">0</span>)</span></span>;</span><br><span class="line">    <span class="type">int</span> dfn_count;</span><br><span class="line">    <span class="function">vector&lt;<span class="type">bool</span>&gt; <span class="title">isbridge</span><span class="params">(n + <span class="number">1</span>, <span class="literal">false</span>)</span></span>;</span><br><span class="line">    <span class="type">int</span> father[n + <span class="number">1</span>];</span><br><span class="line">    <span class="type">int</span> siz[n + <span class="number">1</span>];</span><br><span class="line">    <span class="type">int</span> cnt_bridge;</span><br><span class="line">    dfn_count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; m; i++)&#123;</span><br><span class="line">        <span class="type">int</span> u, v;</span><br><span class="line">        cin &gt;&gt; u &gt;&gt; v;</span><br><span class="line">        vec[u].<span class="built_in">push_back</span>(v);</span><br><span class="line">        vec[v].<span class="built_in">push_back</span>(u);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">tarjan</span>(<span class="number">1</span>, <span class="number">1</span>, vec, low, dfn, father, siz, isbridge, dfn_count);</span><br><span class="line">    <span class="function">vector&lt;<span class="type">bool</span>&gt; <span class="title">vis</span><span class="params">(n + <span class="number">1</span>, <span class="number">0</span>)</span></span>;</span><br><span class="line">    ll ans = <span class="number">1ll</span> * n * (n - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">    <span class="built_in">getans</span>(<span class="number">1</span>, vis, ans, n, vec, siz, isbridge);</span><br><span class="line"></span><br><span class="line">    cout &lt;&lt; ans &lt;&lt; endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> t;</span><br><span class="line">    cin &gt;&gt; t;</span><br><span class="line">    <span class="keyword">while</span>(t--)&#123;</span><br><span class="line">        <span class="built_in">solve</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>python的写法得换成迭代的形式，写递归会爆栈，用Python写算法享大福了（）。</p>
+<p>贴一下别人的写法，我的写法有点垃圾，前后处理的情况用for
+else处理还挺好用的，这样就不用单独用状态区分了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># Versió iterativa per evitar recursion depth limit.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_bridges</span>(<span class="params">graph</span>):</span><br><span class="line"></span><br><span class="line">    n = <span class="built_in">len</span>(graph)</span><br><span class="line">    ids = [-<span class="number">1</span>] * n</span><br><span class="line">    low = [<span class="number">0</span>] * n</span><br><span class="line">    bridges = []</span><br><span class="line">    id_counter = <span class="number">0</span></span><br><span class="line">    stack = []</span><br><span class="line">    parent = [-<span class="number">1</span>] * n</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n):</span><br><span class="line">        <span class="keyword">if</span> ids[i] == -<span class="number">1</span>:</span><br><span class="line">            stack.append((i, <span class="built_in">iter</span>(graph[i])))</span><br><span class="line">            ids[i] = low[i] = id_counter</span><br><span class="line">            id_counter += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> stack:</span><br><span class="line">                v, children = stack[-<span class="number">1</span>]</span><br><span class="line">                <span class="keyword">for</span> to <span class="keyword">in</span> children:</span><br><span class="line">                    <span class="keyword">if</span> ids[to] == -<span class="number">1</span>:</span><br><span class="line">                        stack.append((to, <span class="built_in">iter</span>(graph[to])))</span><br><span class="line">                        parent[to] = v</span><br><span class="line">                        ids[to] = low[to] = id_counter</span><br><span class="line">                        id_counter += <span class="number">1</span></span><br><span class="line">                        <span class="keyword">break</span></span><br><span class="line">                    <span class="keyword">elif</span> to != parent[v]:</span><br><span class="line">                        low[v] = <span class="built_in">min</span>(low[v], ids[to])</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    stack.pop()</span><br><span class="line">                    <span class="keyword">if</span> parent[v] != -<span class="number">1</span>:</span><br><span class="line">                        low[parent[v]] = <span class="built_in">min</span>(low[parent[v]], low[v])</span><br><span class="line">                        <span class="keyword">if</span> ids[parent[v]] &lt; low[v]:</span><br><span class="line">                            bridges.append((parent[v], v))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bridges</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">int</span>(<span class="built_in">input</span>())):</span><br><span class="line">    n, m = <span class="built_in">list</span>(<span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().split()))</span><br><span class="line">    g = [[] <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n)]</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(m):</span><br><span class="line">        u, v = <span class="built_in">list</span>(<span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().split()))</span><br><span class="line">        g[u-<span class="number">1</span>].append(v-<span class="number">1</span>)</span><br><span class="line">        g[v-<span class="number">1</span>].append(u-<span class="number">1</span>)</span><br><span class="line">    sizes = [<span class="number">1</span>]*n</span><br><span class="line">    pare = [-<span class="number">1</span>]*n</span><br><span class="line">    stack = [<span class="number">0</span>]</span><br><span class="line">    dfs = []</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> g[u]:</span><br><span class="line">            <span class="keyword">if</span> pare[v] == -<span class="number">1</span> <span class="keyword">and</span> v != <span class="number">0</span>:</span><br><span class="line">                pare[v] = u</span><br><span class="line">                stack.append(v)</span><br><span class="line">                dfs.append(v)</span><br><span class="line">    <span class="keyword">while</span> dfs:</span><br><span class="line">        u = dfs.pop()</span><br><span class="line">        sizes[pare[u]] += sizes[u]</span><br><span class="line">    </span><br><span class="line">    bridges = find_bridges(g)</span><br><span class="line">    ans = n*(n-<span class="number">1</span>)//<span class="number">2</span></span><br><span class="line">    <span class="keyword">for</span> (u, v) <span class="keyword">in</span> bridges:</span><br><span class="line">        x = <span class="built_in">min</span>(sizes[u], sizes[v])</span><br><span class="line">        ans = <span class="built_in">min</span>(ans, x*(x-<span class="number">1</span>)//<span class="number">2</span> + (n-x)*(n-x-<span class="number">1</span>)//<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(ans) </span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">dfn_count = <span class="number">0</span></span><br><span class="line">ans = <span class="number">0</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">tarjan</span>(<span class="params">u, fa, vec, low, dfn, father, isbridge</span>):</span><br><span class="line">    <span class="keyword">global</span> dfn_count</span><br><span class="line">    dfn_count = <span class="number">0</span></span><br><span class="line">    stack = [(u, -<span class="number">1</span>, <span class="number">0</span>)]  <span class="comment"># (current_node, parent_node, state)</span></span><br><span class="line">    result_stack = []  <span class="comment"># To store the order of processing nodes for correct size calculation</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u, fa, state = stack.pop()</span><br><span class="line">        <span class="comment"># print(f&quot;pop (u:&#123;u&#125;, fa:&#123;fa&#125;, state: &#123;state&#125;)&quot;)</span></span><br><span class="line">        <span class="keyword">if</span> state == <span class="number">0</span>:  <span class="comment"># Pre-processing</span></span><br><span class="line">            father[u] = fa</span><br><span class="line">            <span class="keyword">if</span> dfn[u] == <span class="number">0</span>:</span><br><span class="line">                dfn_count += <span class="number">1</span></span><br><span class="line">                dfn[u] = low[u] = dfn_count</span><br><span class="line">            result_stack.append((u, fa))</span><br><span class="line">            <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">                <span class="keyword">if</span> dfn[v] == <span class="number">0</span>:</span><br><span class="line">                    stack.append((v, u, <span class="number">1</span>)) <span class="comment"># Post-processing state</span></span><br><span class="line">                    <span class="comment"># print(f&quot;append (u:&#123;v&#125;, fa:&#123;u&#125;, state: 1)&quot;)</span></span><br><span class="line">                    stack.append((v, u, <span class="number">0</span>))  <span class="comment"># Pre-processing state for child</span></span><br><span class="line">                    <span class="comment"># print(f&quot;append (v: &#123;u&#125;, u: &#123;v&#125;, state: 0)&quot;)</span></span><br><span class="line">                <span class="keyword">elif</span> dfn[v] &lt; dfn[u] <span class="keyword">and</span> v != fa:</span><br><span class="line">                    low[u] = <span class="built_in">min</span>(low[u], dfn[v])</span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># Post-processing</span></span><br><span class="line">            <span class="keyword">if</span> fa != -<span class="number">1</span>:</span><br><span class="line">                <span class="comment"># print(f&quot;state 1: u: &#123;u&#125;, fa: &#123;fa&#125;&quot;)</span></span><br><span class="line">                low[fa] = <span class="built_in">min</span>(low[fa], low[u])</span><br><span class="line">                <span class="keyword">if</span> low[u] &gt; dfn[fa]:</span><br><span class="line">                    isbridge[u] = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">getans</span>(<span class="params">u, vis, n, vec, siz, isbridge</span>):</span><br><span class="line">    <span class="keyword">global</span> ans</span><br><span class="line">    stack = [u]</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        vis[u] = <span class="literal">True</span></span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> vis[v]:</span><br><span class="line">                <span class="keyword">if</span> isbridge[v] == <span class="literal">True</span>:</span><br><span class="line">                    x, y = siz[v], n - siz[v]</span><br><span class="line">                    ans = <span class="built_in">min</span>(ans, (x * (x - <span class="number">1</span>) // <span class="number">2</span>) + (y * (y - <span class="number">1</span>) // <span class="number">2</span>))</span><br><span class="line">                stack.append(v)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    n, m = <span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().strip().split())</span><br><span class="line">    vec = &#123;&#125;</span><br><span class="line">    low = [ n + <span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    dfn = [ <span class="number">0</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    father = [ -<span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    siz = [ <span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    isbridge = [ <span class="literal">False</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    vis = [ <span class="literal">False</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    <span class="keyword">global</span> dfn_count, ans</span><br><span class="line">    dfn_count = <span class="number">0</span></span><br><span class="line">    ans = <span class="built_in">int</span>(n * (n - <span class="number">1</span>) / <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(m):</span><br><span class="line">        u, v = <span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().strip().split())</span><br><span class="line">        <span class="keyword">if</span> u <span class="keyword">in</span> vec:</span><br><span class="line">            vec[u].append(v)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            vec[u] = [v]</span><br><span class="line">        <span class="keyword">if</span> v <span class="keyword">in</span> vec:</span><br><span class="line">            vec[v].append(u)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            vec[v] = [u]</span><br><span class="line"></span><br><span class="line">    stack = [<span class="number">1</span>]</span><br><span class="line">    dfs = []</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">            <span class="keyword">if</span> father[v] == -<span class="number">1</span> <span class="keyword">and</span> v != <span class="number">1</span>:</span><br><span class="line">                father[v] = u</span><br><span class="line">                stack.append(v)</span><br><span class="line">                dfs.append(v)</span><br><span class="line">    <span class="keyword">while</span> dfs:</span><br><span class="line">        u = dfs.pop()</span><br><span class="line">        siz[father[u]] += siz[u]</span><br><span class="line">    tarjan(<span class="number">1</span>, <span class="number">0</span>, vec, low, dfn, father, isbridge)</span><br><span class="line">    <span class="comment"># print(f&quot;isbridge: &#123;isbridge&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;dfn: &#123;dfn&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;low: &#123;low&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;size: &#123;siz&#125;&quot;)</span></span><br><span class="line">    getans(<span class="number">1</span>, vis, n, vec, siz, isbridge)</span><br><span class="line">    <span class="built_in">print</span>(ans)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    t = <span class="built_in">int</span>(<span class="built_in">input</span>())</span><br><span class="line">    <span class="keyword">while</span>(t &gt; <span class="number">0</span>):</span><br><span class="line">        t -= <span class="number">1</span></span><br><span class="line">        solve()</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -627,7 +921,7 @@ target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/29/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/08/240708-Self-supervised-loss/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -641,7 +935,7 @@ target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/05/29/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+            <a href="/2024/07/08/240708-Self-supervised-loss/" class="post-title-link" itemprop="url">240708_Self_supervised_loss</a>
         </h2>
 
         <div class="post-meta">
@@ -650,8 +944,9 @@ target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2024-05-29 14:36:28" itemprop="dateCreated datePublished" datetime="2024-05-29T14:36:28+08:00">2024-05-29</time>
+              <time title="创建时间：2024-07-08 11:04:33 / 修改时间：11:09:02" itemprop="dateCreated datePublished" datetime="2024-07-08T11:04:33+08:00">2024-07-08</time>
             </span>
 
           
@@ -665,29 +960,255 @@ target="_blank" rel="noopener" href="https://www.cnblogs.com/huanhao/p/hexobase.
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very
-first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for
-more info. If you get any problems when using Hexo, you can find the
-answer in <a
-target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or
-you can ask me on <a
-target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="quick-start">Quick Start</h2>
-<h3 id="create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a
-target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a
-target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a
-target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+          <h2
+id="如何理解lan-learn-to-adapt-noise-中的-self-supervised-loss">如何理解LAN:
+Learn to adapt noise 中的 self-supervised Loss</h2>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/01/CLIP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/07/01/CLIP/" class="post-title-link" itemprop="url">Models</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-01 14:30:16" itemprop="dateCreated datePublished" datetime="2024-07-01T14:30:16+08:00">2024-07-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-07-02 19:40:04" itemprop="dateModified" datetime="2024-07-02T19:40:04+08:00">2024-07-02</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="simple-tokenizer">Simple Tokenizer</h2>
+<h3 id="bpe编码">BPE编码</h3>
+<h2 id="positionalembedding">PositionalEmbedding</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">EmbeddingWithPosition</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self,vocab_size,dim,seq_max_len</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        </span><br><span class="line">        self.seq_emb=nn.Embedding(vocab_size,dim)</span><br><span class="line"></span><br><span class="line">        position_idx=torch.arange(<span class="number">0</span>,seq_max_len,dtype=torch.<span class="built_in">float</span>).unsqueeze(-<span class="number">1</span>)</span><br><span class="line">        position_emb_fill=position_idx*torch.exp(-torch.arange(<span class="number">0</span>,dim,<span class="number">2</span>)*math.log(<span class="number">10000.0</span>)/dim)</span><br><span class="line">        pos_encoding=torch.zeros(seq_max_len,dim)</span><br><span class="line">        pos_encoding[:,<span class="number">0</span>::<span class="number">2</span>]=torch.sin(position_emb_fill)</span><br><span class="line">        pos_encoding[:,<span class="number">1</span>::<span class="number">2</span>]=torch.cos(position_emb_fill)</span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pos_encoding&#x27;</span>,pos_encoding) </span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,x</span>):    <span class="comment"># x: (batch_size,seq_len)</span></span><br><span class="line">        x=self.seq_emb(x)   <span class="comment"># x: (batch_size,seq_len,dim)</span></span><br><span class="line">        x=x+self.pos_encoding.unsqueeze(<span class="number">0</span>)[:,:x.size()[<span class="number">1</span>],:] <span class="comment"># x: (batch_size,seq_len,dim)</span></span><br><span class="line">        <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
+<h2 id="clip">CLIP</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CLIP</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self,</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        self.img_enc=ImgEncoder()</span><br><span class="line">        self.text_enc=TextEncoder()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,img_x,text_x</span>):</span><br><span class="line">        img_emb=self.img_enc(img_x)</span><br><span class="line">        text_emb=self.text_enc(text_x)</span><br><span class="line">        <span class="keyword">return</span> img_emb@text_emb.T</span><br></pre></td></tr></table></figure>
+<h2 id="example_encoder">example_encoder</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ResidualBlock</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self,in_channels,out_channels,stride</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        self.conv1=nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=<span class="number">3</span>,padding=<span class="number">1</span>,stride=stride)</span><br><span class="line">        self.bn1=nn.BatchNorm2d(out_channels)</span><br><span class="line">        </span><br><span class="line">        self.conv2=nn.Conv2d(in_channels=out_channels,out_channels=out_channels,kernel_size=<span class="number">3</span>,padding=<span class="number">1</span>,stride=<span class="number">1</span>)</span><br><span class="line">        self.bn2=nn.BatchNorm2d(out_channels)</span><br><span class="line">        </span><br><span class="line">        self.conv3=nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=<span class="number">1</span>,padding=<span class="number">0</span>,stride=stride)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,x</span>):</span><br><span class="line">        y=F.relu(self.bn1(self.conv1(x)))</span><br><span class="line">        y=self.bn2(self.conv2(y))</span><br><span class="line">        z=self.conv3(x)</span><br><span class="line">        <span class="keyword">return</span> F.relu(y+z)</span><br><span class="line">        </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ImgEncoder</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        self.res_block1=ResidualBlock(in_channels=<span class="number">1</span>,out_channels=<span class="number">16</span>,stride=<span class="number">2</span>) <span class="comment"># (batch,16,14,14)</span></span><br><span class="line">        self.res_block2=ResidualBlock(in_channels=<span class="number">16</span>,out_channels=<span class="number">4</span>,stride=<span class="number">2</span>) <span class="comment"># (batch,4,7,7)</span></span><br><span class="line">        self.res_block3=ResidualBlock(in_channels=<span class="number">4</span>,out_channels=<span class="number">1</span>,stride=<span class="number">2</span>) <span class="comment"># (batch,1,4,4)</span></span><br><span class="line">        self.wi=nn.Linear(in_features=<span class="number">16</span>,out_features=<span class="number">8</span>)</span><br><span class="line">        self.ln=nn.LayerNorm(<span class="number">8</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,x</span>):</span><br><span class="line">        x=self.res_block1(x)</span><br><span class="line">        x=self.res_block2(x)</span><br><span class="line">        x=self.res_block3(x)</span><br><span class="line">        x=self.wi(x.view(x.size(<span class="number">0</span>),-<span class="number">1</span>))</span><br><span class="line">        x=self.ln(x)</span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line">    </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TextEncoder</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        self.emb=nn.Embedding(num_embeddings=<span class="number">10</span>,embedding_dim=<span class="number">16</span>)</span><br><span class="line">        self.dense1=nn.Linear(in_features=<span class="number">16</span>,out_features=<span class="number">64</span>)</span><br><span class="line">        self.dense2=nn.Linear(in_features=<span class="number">64</span>,out_features=<span class="number">16</span>)</span><br><span class="line">        self.wt=nn.Linear(in_features=<span class="number">16</span>,out_features=<span class="number">8</span>)</span><br><span class="line">        self.ln=nn.LayerNorm(<span class="number">8</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,x</span>):</span><br><span class="line">        x=self.emb(x)</span><br><span class="line">        x=F.relu(self.dense1(x))</span><br><span class="line">        x=F.relu(self.dense2(x))</span><br><span class="line">        x=self.wt(x)</span><br><span class="line">        x=self.ln(x)</span><br><span class="line">        <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
+<h2 id="vit">VIT</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ViT</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self,emb_size=<span class="number">16</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        self.patch_size=<span class="number">4</span></span><br><span class="line">        self.patch_count=<span class="number">28</span>//self.patch_size <span class="comment"># 7  </span></span><br><span class="line">        	 							    self.conv=nn.Conv2d(in_channels=<span class="number">1</span>,out_channels=self.patch_size**<span class="number">2</span>,kernel_size=self.patch_size,padding=<span class="number">0</span>,stride=self.patch_size) <span class="comment"># 图片转patch</span></span><br><span class="line">        self.patch_emb=nn.Linear(in_features=self.patch_size**<span class="number">2</span>,out_features=emb_size)    <span class="comment"># patch做emb</span></span><br><span class="line">        self.cls_token=nn.Parameter(torch.rand(<span class="number">1</span>,<span class="number">1</span>,emb_size))   <span class="comment"># 分类头输入</span></span><br><span class="line">        self.pos_emb=nn.Parameter(torch.rand(<span class="number">1</span>,self.patch_count**<span class="number">2</span>+<span class="number">1</span>,emb_size))   <span class="comment"># position位置向量 (1,seq_len,emb_size)</span></span><br><span class="line">          self.tranformer_enc=nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=emb_size,nhead=<span class="number">2</span>,batch_first=<span class="literal">True</span>),num_layers=<span class="number">3</span>)   <span class="comment"># transformer编码器</span></span><br><span class="line">        self.cls_linear=nn.Linear(in_features=emb_size,out_features=<span class="number">10</span>) <span class="comment"># 手写数字10分类</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self,x</span>): <span class="comment"># (batch_size,channel=1,width=28,height=28)</span></span><br><span class="line">        x=self.conv(x) <span class="comment"># (batch_size,channel=16,width=7,height=7)</span></span><br><span class="line">        </span><br><span class="line">        x=x.view(x.size(<span class="number">0</span>),x.size(<span class="number">1</span>),self.patch_count**<span class="number">2</span>)   <span class="comment"># (batch_size,channel=16,seq_len=49)</span></span><br><span class="line">        x=x.permute(<span class="number">0</span>,<span class="number">2</span>,<span class="number">1</span>)  <span class="comment"># (batch_size,seq_len=49,channel=16)</span></span><br><span class="line">        </span><br><span class="line">        x=self.patch_emb(x)   <span class="comment"># (batch_size,seq_len=49,emb_size)</span></span><br><span class="line">        </span><br><span class="line">        cls_token=self.cls_token.expand(x.size(<span class="number">0</span>),<span class="number">1</span>,x.size(<span class="number">2</span>))  <span class="comment"># (batch_size,1,emb_size)</span></span><br><span class="line">        x=torch.cat((cls_token,x),dim=<span class="number">1</span>)   <span class="comment"># add [cls] token</span></span><br><span class="line">        x=self.pos_emb+x</span><br><span class="line">        </span><br><span class="line">        y=self.tranformer_enc(x) <span class="comment"># 不涉及padding，所以不需要mask</span></span><br><span class="line">        <span class="keyword">return</span> self.cls_linear(y[:,<span class="number">0</span>,:])   <span class="comment"># 对[CLS] token输出做分类</span></span><br></pre></td></tr></table></figure>
+<p>ViT作分类。</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407021454132.png"
+alt="image-20240702145425039" />
+<figcaption aria-hidden="true">image-20240702145425039</figcaption>
+</figure>
+<h2 id="ditdiffusion-transformer">DiT(Diffusion Transformer)</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ConvBlock</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, in_channel, out_channel, time_emb_size, qsize, vsize, fsize, cls_emb_size</span>):</span><br><span class="line">        <span class="built_in">super</span>(ConvBlock, self).__init__()</span><br><span class="line"></span><br><span class="line">        self.seq1 = nn.Sequential(</span><br><span class="line">            nn.Conv2d(in_channel, out_channel, kernel_size=<span class="number">3</span>, stride=<span class="number">1</span>, padding=<span class="number">1</span>),  <span class="comment"># 改通道数,不改大小</span></span><br><span class="line">            nn.BatchNorm2d(out_channel),</span><br><span class="line">            nn.ReLU(),</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        self.time_emb_linear = nn.Linear(time_emb_size, out_channel) <span class="comment"># Time </span></span><br><span class="line">        self.relu = nn.ReLU()</span><br><span class="line"></span><br><span class="line">        self.seq2 = nn.Sequential(</span><br><span class="line">            nn.Conv2d(out_channel, out_channel, kernel_size=<span class="number">3</span>, stride=<span class="number">1</span>, padding=<span class="number">1</span>),</span><br><span class="line">            nn.BatchNorm2d(out_channel),</span><br><span class="line">            nn.ReLU(),</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 像素做Query，计算对分类ID的注意力，实现分类信息融入图像，不改变图像形状和通道数</span></span><br><span class="line">        self.crossattn = CrossAttention(channel=out_channel, qsize=qsize, vsize=vsize, fsize=fsize, cls_emb_size=cls_emb_size)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, t_emb, cls_emb</span>):</span><br><span class="line">        x = self.seq1(x)</span><br><span class="line">        t_emb = self.relu(self.time_emb_linear(t_emb)).view(x.size(<span class="number">0</span>), x.size(<span class="number">1</span>), <span class="number">1</span>, <span class="number">1</span>) <span class="comment"># t_emb: (B, out_channel, 1, 1)</span></span><br><span class="line">        output = self.seq2(x + t_emb)</span><br><span class="line">        <span class="keyword">return</span> self.crossattn(output, cls_emb)</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/06/28/paper-read/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/06/28/paper-read/" class="post-title-link" itemprop="url">paper read</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-06-28 15:07:59 / 修改时间：15:33:01" itemprop="dateCreated datePublished" datetime="2024-06-28T15:07:59+08:00">2024-06-28</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 6%" />
+<col style="width: 42%" />
+<col style="width: 2%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Title</th>
+<th>about</th>
+<th>conclusion</th>
+<th></th>
+<th>year</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a
+target="_blank" rel="noopener" href="https://proceedings.mlr.press/v202/hoogeboom23a.html">simple
+diffusion: End-to-end diffusion for high resolution images</a></td>
+<td>diffusion</td>
+<td>1.noise schedule，对于高分辨率图像生成，应该引入更多噪声， 2.在pixel
+level直接生成高分辨率图像，而不是通过超分。3.dropout：仅在Unet结构的最小层16x16加入。4.Unet结构下采样上采样不为传统的2倍，而是第一层就下降到64*64或更小。</td>
+<td></td>
+<td>ICML2023</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/06/18/Pytorch-learning/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/06/18/Pytorch-learning/" class="post-title-link" itemprop="url">Pytorch learning</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-06-18 15:09:01 / 修改时间：15:11:27" itemprop="dateCreated datePublished" datetime="2024-06-18T15:09:01+08:00">2024-06-18</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="pytorch-2.0">Pytorch 2.0</h2>
+<p>使用 <strong>torch.compile()</strong> 加速训练和测试。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torchvision</span><br><span class="line"></span><br><span class="line">model = torchvision.models.resnet50() <span class="comment"># note: this could be any model</span></span><br><span class="line">compiled_model = torch.<span class="built_in">compile</span>(model) <span class="comment"># &lt;- magic happens!</span></span><br><span class="line"></span><br><span class="line"><span class="comment">### Train model ### &lt;- faster!</span></span><br><span class="line"></span><br><span class="line"><span class="comment">### Test model ### &lt;- faster!</span></span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -705,6 +1226,9 @@ target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment
 
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
 
 
 
@@ -769,7 +1293,7 @@ target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

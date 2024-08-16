@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Previous work Cross-modal intensity-based learning Multi-task Learning 多任务学习是一种联合学习，多个任务并行学习，结果相互影响。 目前多任务学习方法大致可以总结为两类，一是不同任务之间共享相同的参数（common parameter），二是挖掘不同任务之间隐藏的共有数据特征（latent feature）。 S">
+<meta property="og:type" content="article">
+<meta property="og:title" content="240723-SCPNet">
+<meta property="og:url" content="http://example.com/2024/07/23/240723-SCPNet/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Previous work Cross-modal intensity-based learning Multi-task Learning 多任务学习是一种联合学习，多个任务并行学习，结果相互影响。 目前多任务学习方法大致可以总结为两类，一是不同任务之间共享相同的参数（common parameter），二是挖掘不同任务之间隐藏的共有数据特征（latent feature）。 S">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="c:\Users\Administrator\Desktop\202407241416861.png">
+<meta property="og:image" content="c:\Users\Administrator\Desktop\HEN">
+<meta property="article:published_time" content="2024-07-23T05:00:10.000Z">
+<meta property="article:modified_time" content="2024-08-05T01:55:33.316Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="c:\Users\Administrator\Desktop\202407241416861.png">
+
+<link rel="canonical" href="http://example.com/2024/07/23/240723-SCPNet/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>240723-SCPNet | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/23/240723-SCPNet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          240723-SCPNet
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-07-23 13:00:10" itemprop="dateCreated datePublished" datetime="2024-07-23T13:00:10+08:00">2024-07-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-08-05 09:55:33" itemprop="dateModified" datetime="2024-08-05T09:55:33+08:00">2024-08-05</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="previous-work">Previous work</h2>
+<h3 id="cross-modal-intensity-based-learning">Cross-modal
+intensity-based learning</h3>
+<h3 id="multi-task-learning">Multi-task Learning</h3>
+<p><strong>多任务学习是一种联合学习，多个任务并行学习，结果相互影响。</strong></p>
+<p>目前多任务学习方法大致可以总结为两类，<strong>一是不同任务之间共享相同的参数（common
+parameter）</strong>，<strong>二是挖掘不同任务之间隐藏的共有数据特征（latent
+feature）</strong>。</p>
+<p><strong>SCPNet</strong>可以看作同时做<strong>模态内单应性估计</strong>和<strong>跨模态单应性估计</strong>任务。</p>
+<h2 id="method">Method</h2>
+<h3 id="finding">Finding</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407271052074.png"
+alt="image-20240727105243044" />
+<figcaption aria-hidden="true">image-20240727105243044</figcaption>
+</figure>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407271052486.png"
+alt="image-20240727105225425" />
+<figcaption aria-hidden="true">image-20240727105225425</figcaption>
+</figure>
+<p>受多任务学习的启发，使用模态内监督的Loss来帮助训练。中间跨模态Loss的是主体，两边对模态内的warp是辅助。</p>
+<p><strong>在Train阶段，由于是共享参数，模态内的监督训练对CFMP和Homography
+Estimation Network都会有影响。</strong> 并且模态内的监督<span
+class="math inline">\(P_A&#39;, P_A\)</span>
+之间计算的Loss，相互之间也存在关联。</p>
+<h3 id="network">Network</h3>
+<figure>
+<img src="C:\Users\Administrator\Desktop\202407241416861.png"
+alt="image-20240724141613778" />
+<figcaption aria-hidden="true">image-20240724141613778</figcaption>
+</figure>
+<p>我的理解：主要是跨模态图像<span class="math inline">\(I_A,
+I_B\)</span>
+的无监督训练，无监督训练的Loss仅在特征上计算。然后融入模态内监督任务的有效信息。</p>
+<p>推理时只使用跨模态的部分，把计算的<span
+class="math inline">\(H_{AB}\)</span> （实际上计算的是四个Corner
+point的偏移量），计算<strong>mace</strong> <span class="math display">\[
+mace = \frac{\sqrt{\sum_{i=1}^{4} (pred[i] - gt[i])^2 }}{4}
+\]</span></p>
+<h4
+id="correlation-based-homography-estimation-network">Correlation-based
+Homography Estimation Network</h4>
+<figure>
+<img src="C:\Users\Administrator\Desktop\HEN"
+alt="image-20240723142702919" />
+<figcaption aria-hidden="true">image-20240723142702919</figcaption>
+</figure>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231428118.png"
+alt="image-20240723142838086" />
+<figcaption aria-hidden="true">image-20240723142838086</figcaption>
+</figure>
+<p><span class="math inline">\(图像A, B经过Feature Extractor\)</span>
+得到<span class="math inline">\(F_A, F_B\)</span> 。<span
+class="math inline">\(C(x, r)\)</span> 表示</p>
+<h4 id="intra-modal-self-supervised-learning">Intra-modal
+Self-supervised learning</h4>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231432283.png"
+alt="image-20240723143214250" />
+<figcaption aria-hidden="true">image-20240723143214250</figcaption>
+</figure>
+<p>这里<span class="math inline">\(\psi_\xi\)</span>
+指的是带<strong>Correlation</strong>的单应矩阵估计网络，Intr-modal指的估计网络输入的是同一模态的warp。</p>
+<h4
+id="correlation-and-consistent-feature-map-projection">C<strong>orrelation</strong>
+and consistent feature map projection</h4>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231445145.png"
+alt="image-20240723144511106" />
+<figcaption aria-hidden="true">image-20240723144511106</figcaption>
+</figure>
+<p>动机？？？</p>
+<h3 id="loss-function">Loss Function</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407231502138.png"
+alt="image-20240723150239096" />
+<figcaption aria-hidden="true">image-20240723150239096</figcaption>
+</figure>
+<h2 id="experiment">Experiment</h2>
+<h3 id="dataset">dataset</h3>
+<ul>
+<li>GoogleMap</li>
+<li>Flash/no-Flash</li>
+<li>Harvard</li>
+<li>RGB/NIR</li>
+<li>manually-made inconsistent dataset <strong>PDS-COCO</strong></li>
+</ul>
+<h3 id="ablation">Ablation</h3>
+<h2 id="question">Question</h2>
+<h3 id="flickr-引导和去噪算是不同模态的么">Flickr
+引导和去噪算是不同模态的么？</h3>
+<p>对模态的定义？？</p>
+<p>像GoogleMap使用的是 谷歌地图 和
+对应的卫星图像，RGBNIR是RGB、NIR图像对。</p>
+<h3 id="scpnet">SCPNet</h3>
+<p>对ImgB进行warp，得到真值的 H （或者说corner
+points的偏移)。网络通过输入warp后的ImgB，和另一模态的ImgA，预测ImgB</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407241541695.png"
+alt="image-20240724154117641" />
+<figcaption aria-hidden="true">image-20240724154117641</figcaption>
+</figure>
+<p>网络模型上写的是对<span class="math inline">\(F_B\)</span> 应用<span
+class="math inline">\(H_{AB}\)</span></p>
+<h3 id="关于googlemap数据集">关于GoogleMap数据集</h3>
+<p>SCPNet提到使用的GoogleMap数据集，引用的CVPR2021论文<strong>Deep
+Lucas-Kanade homography for multimodal image alignment.</strong>
+这个论文使用的GoogleMap是使用Google的API随机采样出来的。</p>
+<p>Q：下载下来的大小就是Input为192x192，template
+original为128x128，还需要预处理的代码。但是SCPNet的代码处理里有Crop
+成192x192的部分。是自己采集的数据么？？？</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407271527016.png"
+alt="image-20240727144909195" />
+<figcaption aria-hidden="true">image-20240727144909195</figcaption>
+</figure>
+<p>Q：代码里原始读入的是 (Img1, Img2) 经过syn_homo函数将<span
+class="math inline">\(img2\)</span> warp</p>
+<p>模态内监督的输入为 syn_homo(img2,
+self.transform(image=img2)['image'])，稍微对img2做一点变化再进行warp。</p>
+<p>那这边这个图是不是中间加个warp？？</p>
+<p>Q：这个<span class="math inline">\(I_B\)</span> , img2
+本身就是扭曲的图像么？</p>
+<p><strong>input:</strong></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261519732.png"
+alt="image-20240726151906588" />
+<figcaption aria-hidden="true">image-20240726151906588</figcaption>
+</figure>
+<p><strong>template:</strong></p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261518226.png"
+alt="image-20240726151852068" />
+<figcaption aria-hidden="true">image-20240726151852068</figcaption>
+</figure>
+<h3
+id="单应性变换对于深度忽略不计的假设">单应性变换对于深度忽略不计的假设</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407261626127.png"
+alt="image-20240726162610086" />
+<figcaption aria-hidden="true">image-20240726162610086</figcaption>
+</figure>
+<p>单应性矩阵因为是对成像的物体所在的平面，整体都做<strong>H</strong>
+变换映射到另一个平面，也就是说原图像的每一个点都应用同一种变换操作，所以深度的差异会导致单应性变换不成立。</p>
+<h3 id="可视化">可视化</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407271535434.png"
+alt="image-20240727151232251" />
+<figcaption aria-hidden="true">image-20240727151232251</figcaption>
+</figure>
+<p><strong>Green polygons denote the ground-truth homography deformation
+from IB (source, the deformed image) to IA (target).</strong></p>
+<p>Groud-truth是<span class="math inline">\(I_B\)</span> warp
+后得到的，估计的Corner points。开始warp应用的是<span
+class="math inline">\(H_{inverse}\)</span>, GT 是 <span
+class="math inline">\(H\)</span> ，对<span class="math inline">\(warp
+后的 I_B 应用H\)</span> ,</p>
+<p>如果<span class="math inline">\(I_A, I_B\)</span>
+结构是对齐的，说得通，不对齐呢？</p>
+<h3 id="服务器224">服务器224</h3>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud@master/img/202407290959811.png"
+alt="image-20240729095901731" />
+<figcaption aria-hidden="true">image-20240729095901731</figcaption>
+</figure>
+<h2 id="record">record</h2>
+<p>resize网络的Corner point得到H矩阵，对Flickr数据集处理</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/07/20/Python-Spider/" rel="prev" title="Python-Spider">
+      <i class="fa fa-chevron-left"></i> Python-Spider
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/05/%E5%85%89%E6%B5%81Optical-Flow-ECCV2020-RAFT/" rel="next" title="光流Optical Flow:ECCV2020 RAFT">
+      光流Optical Flow:ECCV2020 RAFT <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#previous-work"><span class="nav-number">1.</span> <span class="nav-text">Previous work</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cross-modal-intensity-based-learning"><span class="nav-number">1.1.</span> <span class="nav-text">Cross-modal
+intensity-based learning</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#multi-task-learning"><span class="nav-number">1.2.</span> <span class="nav-text">Multi-task Learning</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#method"><span class="nav-number">2.</span> <span class="nav-text">Method</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#finding"><span class="nav-number">2.1.</span> <span class="nav-text">Finding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#network"><span class="nav-number">2.2.</span> <span class="nav-text">Network</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#correlation-based-homography-estimation-network"><span class="nav-number">2.2.1.</span> <span class="nav-text">Correlation-based
+Homography Estimation Network</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#intra-modal-self-supervised-learning"><span class="nav-number">2.2.2.</span> <span class="nav-text">Intra-modal
+Self-supervised learning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#correlation-and-consistent-feature-map-projection"><span class="nav-number">2.2.3.</span> <span class="nav-text">Correlation
+and consistent feature map projection</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#loss-function"><span class="nav-number">2.3.</span> <span class="nav-text">Loss Function</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#experiment"><span class="nav-number">3.</span> <span class="nav-text">Experiment</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dataset"><span class="nav-number">3.1.</span> <span class="nav-text">dataset</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ablation"><span class="nav-number">3.2.</span> <span class="nav-text">Ablation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#question"><span class="nav-number">4.</span> <span class="nav-text">Question</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#flickr-%E5%BC%95%E5%AF%BC%E5%92%8C%E5%8E%BB%E5%99%AA%E7%AE%97%E6%98%AF%E4%B8%8D%E5%90%8C%E6%A8%A1%E6%80%81%E7%9A%84%E4%B9%88"><span class="nav-number">4.1.</span> <span class="nav-text">Flickr
+引导和去噪算是不同模态的么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#scpnet"><span class="nav-number">4.2.</span> <span class="nav-text">SCPNet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Egooglemap%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">4.3.</span> <span class="nav-text">关于GoogleMap数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E5%BA%94%E6%80%A7%E5%8F%98%E6%8D%A2%E5%AF%B9%E4%BA%8E%E6%B7%B1%E5%BA%A6%E5%BF%BD%E7%95%A5%E4%B8%8D%E8%AE%A1%E7%9A%84%E5%81%87%E8%AE%BE"><span class="nav-number">4.4.</span> <span class="nav-text">单应性变换对于深度忽略不计的假设</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="nav-number">4.5.</span> <span class="nav-text">可视化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8224"><span class="nav-number">4.6.</span> <span class="nav-text">服务器224</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#record"><span class="nav-number">5.</span> <span class="nav-text">record</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    // window.MathJax = {
+    //   loader: {
+    //
+    //     source: {
+    //       '[tex]/amsCd': '[tex]/amscd',
+    //       '[tex]/AMScd': '[tex]/amscd'
+    //     }
+    //   },
+    //   tex: {
+    //     inlineMath: {'[+]': [['$', '$']]},
+    //
+    //     tags: 'ams'
+    //   },
+    //   options: {
+    //     renderActions: {
+    //       findScript: [10, doc => {
+    //         document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+    //           const display = !!node.type.match(/; *mode=display/);
+    //           const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+    //           const text = document.createTextNode('');
+    //           node.parentNode.replaceChild(text, node);
+    //           math.start = {node: text, delim: '', n: 0};
+    //           math.end = {node: text, delim: '', n: 0};
+    //           doc.math.push(math);
+    //         });
+    //       }, '', false],
+    //       insertedScript: [200, () => {
+    //         document.querySelectorAll('mjx-container').forEach(node => {
+    //           let target = node.parentNode;
+    //           if (target.nodeName.toLowerCase() === 'li') {
+    //             target.parentNode.classList.add('has-jax');
+    //           }
+    //         });
+    //       }, '', false]
+    //     }
+    //   }
+    // };
+    window.MathJax = {
+      tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+        processEscapes: true
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@2.7.8/unpacked/MathJax.js?config=TeX-MML-AM_CHTML';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

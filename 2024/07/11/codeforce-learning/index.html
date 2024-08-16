@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="桥 Bridge 定义 桥（割边）：对于一个无向图，如果删掉一条边后图中的连通分量数增加了，则称这条边为桥或者割边。   image-20240711132232780  考虑以任意点为起点对无向图进行DFS序，黑色和绿色边为树上边，红色为非树上边，每条红色边都覆盖了树上的一条简单路径，被覆盖的边为绿色边，不被覆盖的边为黑色边。 如何找桥 显然，绿色边的树边和红色的非树边一定不是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="codeforce_learning">
+<meta property="og:url" content="http://example.com/2024/07/11/codeforce-learning/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="桥 Bridge 定义 桥（割边）：对于一个无向图，如果删掉一条边后图中的连通分量数增加了，则称这条边为桥或者割边。   image-20240711132232780  考虑以任意点为起点对无向图进行DFS序，黑色和绿色边为树上边，红色为非树上边，每条红色边都覆盖了树上的一条简单路径，被覆盖的边为绿色边，不被覆盖的边为黑色边。 如何找桥 显然，绿色边的树边和红色的非树边一定不是">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-11T05:09:59.000Z">
+<meta property="article:modified_time" content="2024-07-11T10:04:56.093Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2024/07/11/codeforce-learning/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>codeforce_learning | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/07/11/codeforce-learning/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          codeforce_learning
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2024-07-11 13:09:59 / 修改时间：18:04:56" itemprop="dateCreated datePublished" datetime="2024-07-11T13:09:59+08:00">2024-07-11</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="桥-bridge">桥 Bridge</h2>
+<h3 id="定义">定义</h3>
+<p><strong>桥（割边）</strong>：对于一个无向图，如果删掉一条边后图中的连通分量数增加了，则称这条边为桥或者割边。</p>
+<figure>
+<img
+src="https://jsd.onmicrosoft.cn/gh/kurisu0725/ImgCloud/img/202407111322824.png"
+alt="image-20240711132232780" />
+<figcaption aria-hidden="true">image-20240711132232780</figcaption>
+</figure>
+<p>考虑以任意点为起点对无向图进行DFS序，黑色和绿色边为<strong>树上边</strong>，红色为<strong>非树上边</strong>，每条<strong>红色</strong>边都<strong>覆盖</strong>了树上的一条简单路径，被覆盖的边为<strong>绿色边</strong>，不被覆盖的边为<strong>黑色边</strong>。</p>
+<h3 id="如何找桥">如何找桥</h3>
+<p>显然，绿色边的树边和红色的非树边一定不是桥（删除一条绿色或红色边都会有对应的红色、绿色边联通另一条路径），黑色的树边一定是桥。</p>
+<p>这个过程就转化为寻找黑色的树边。</p>
+<p><strong>朴素做法</strong>：<span
+class="math display">\[O(nm)\]</span> ,
+对于每一条非树边，都逐个地将它覆盖的每一条树边置成绿色。</p>
+<p><strong>优化</strong>：使用差分。对于每一条非树边，在其树上深度较小的点处打上<span
+class="math display">\[\bold{-1}\]</span>
+标记，在其深度较大的点处打上<span
+class="math display">\[\bold{+1}\]</span> 标记。然后<span
+class="math inline">\(O(n)\)</span>求出每个点的子树内部的标记之和。对于一个点<span
+class="math inline">\(u\)</span>，其子树内部的标记之和等于覆盖了<strong><span
+class="math inline">\(u\)</span>和<span
+class="math inline">\(u\)</span>的父亲之间的树边的非树边数量</strong>。若这个值非0，则<span
+class="math inline">\(u\)</span>和<span
+class="math inline">\(u\)</span>的父亲之间的树边不是桥，否则是桥。</p>
+<p>2.tarjan求割边。</p>
+<p><strong>复杂度</strong>：<span class="math display">\[O(n + m)
+\]</span>
+求出每条边是否是桥后，两个点是边双连通的，当且仅当它们的树上路径<strong>不</strong>包含桥。</p>
+<p>参考<a target="_blank" rel="noopener" href="https://oi-wiki.org/graph/bcc/">双连通分量 - OI Wiki
+(oi-wiki.org)</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> low[MAXN], dfn[MAXN], dfs_clock;</span><br><span class="line"><span class="type">bool</span> isbridge[MAXN];</span><br><span class="line">vector&lt;<span class="type">int</span>&gt; G[MAXN];</span><br><span class="line"><span class="type">int</span> cnt_bridge;</span><br><span class="line"><span class="type">int</span> father[MAXN];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">tarjan</span><span class="params">(<span class="type">int</span> u, <span class="type">int</span> fa)</span> </span>&#123;</span><br><span class="line">  father[u] = fa;</span><br><span class="line">  low[u] = dfn[u] = ++dfs_clock;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; G[u].<span class="built_in">size</span>(); i++) &#123;</span><br><span class="line">    <span class="type">int</span> v = G[u][i];</span><br><span class="line">    <span class="keyword">if</span> (!dfn[v]) &#123;</span><br><span class="line">      <span class="built_in">tarjan</span>(v, u);</span><br><span class="line">      low[u] = <span class="built_in">min</span>(low[u], low[v]);</span><br><span class="line">      <span class="keyword">if</span> (low[v] &gt; dfn[u]) &#123; <span class="comment">//表明v不经过u就不能访问u的父节点,(v, u)是一条割边</span></span><br><span class="line">        isbridge[v] = <span class="literal">true</span>;</span><br><span class="line">        ++cnt_bridge;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (dfn[v] &lt; dfn[u] &amp;&amp; v != fa) &#123; <span class="comment">// dfn[v] != 0 说明v已经遍历过，存在回边或重边，需要更新low[u] = min(low[u], dfn[v]), 此时(u,v)不再为割边。</span></span><br><span class="line">      low[u] = <span class="built_in">min</span>(low[u], dfn[v]); <span class="comment">//重边的情况，</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="f.-non-academic-problem"><a
+target="_blank" rel="noopener" href="https://codeforces.com/contest/1986/problem/F">1986F. Non-academic
+Problem</a></h3>
+<p>无向图，删除一条边，要使得删除后得到的两个连通分量的式子最大化。</p>
+<p>假设无向图点数为<span class="math inline">\(n\)</span>，边为<span
+class="math inline">\(m\)</span>, 删除后得到的连通分量的顶点个数为<span
+class="math inline">\(x, y\)</span>,满足<span class="math inline">\(x +
+y = n\)</span>，</p>
+<p>要最大化 <span class="math display">\[
+\frac{x(x-1)}{2} + \frac{y(y - 1)}{2} \\
+\]</span>
+只要判断(u,v)是否为桥，计算一个节点的子树siz的顶点个数即可。不存在桥的答案则为<span
+class="math inline">\((n - 1)n/2\)</span></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">typedef</span> <span class="type">long</span> <span class="type">long</span> ll;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> maxn = <span class="number">2e5</span> + <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">tarjan</span><span class="params">(<span class="type">int</span> u, <span class="type">int</span> fa, vector&lt;<span class="type">int</span>&gt; vec[], vector&lt;<span class="type">int</span>&gt;&amp; low, vector&lt;<span class="type">int</span>&gt;&amp; dfn, <span class="type">int</span> father[], <span class="type">int</span> siz[], vector&lt;<span class="type">bool</span>&gt;&amp; isbridge, <span class="type">int</span> &amp;dfn_count)</span></span>&#123;</span><br><span class="line">    father[u] = fa;</span><br><span class="line">    low[u] = dfn[u] = ++dfn_count;</span><br><span class="line">    siz[u] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; vec[u].<span class="built_in">size</span>(); i++)&#123;</span><br><span class="line">        <span class="type">int</span> v = vec[u][i];</span><br><span class="line">        <span class="keyword">if</span>(!dfn[v])&#123;</span><br><span class="line">            <span class="built_in">tarjan</span>(v, u, vec, low, dfn, father, siz, isbridge, dfn_count);</span><br><span class="line">            siz[u] += siz[v];</span><br><span class="line">            low[u] = <span class="built_in">min</span>(low[u], low[v]);</span><br><span class="line">            <span class="keyword">if</span>(low[v] &gt; dfn[u])&#123;</span><br><span class="line">                isbridge[v] = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span>(dfn[v] &lt; dfn[u] &amp;&amp; v != fa)&#123;</span><br><span class="line">            low[u] = <span class="built_in">min</span>(low[u], dfn[v]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">getans</span><span class="params">(<span class="type">int</span> u, vector&lt;<span class="type">bool</span>&gt;&amp; vis, ll&amp; ans, <span class="type">int</span> n, vector&lt;<span class="type">int</span>&gt; vec[], <span class="type">int</span> siz[], vector&lt;<span class="type">bool</span>&gt;&amp; isbridge)</span></span>&#123;</span><br><span class="line">    vis[u] = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; vec[u].<span class="built_in">size</span>(); i++)&#123;</span><br><span class="line">        <span class="type">int</span> v = vec[u][i];</span><br><span class="line">        <span class="keyword">if</span>(!vis[v])&#123;</span><br><span class="line">            <span class="keyword">if</span>(isbridge[v])&#123;</span><br><span class="line">                ll x = siz[v], y = n - siz[v];</span><br><span class="line">                ans = <span class="built_in">min</span>(ans, x * (x - <span class="number">1</span>) / <span class="number">2</span> + y * (y - <span class="number">1</span>) / <span class="number">2</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">getans</span>(v, vis, ans, n, vec, siz, isbridge);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">solve</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> n, m;</span><br><span class="line">    cin &gt;&gt; n &gt;&gt; m;</span><br><span class="line">    vector&lt;<span class="type">int</span>&gt; vec[n + <span class="number">1</span>];</span><br><span class="line">    <span class="function">vector&lt;<span class="type">int</span>&gt; <span class="title">low</span><span class="params">(n + <span class="number">1</span>, n + <span class="number">1</span>)</span>, <span class="title">dfn</span><span class="params">(n + <span class="number">1</span>, <span class="number">0</span>)</span></span>;</span><br><span class="line">    <span class="type">int</span> dfn_count;</span><br><span class="line">    <span class="function">vector&lt;<span class="type">bool</span>&gt; <span class="title">isbridge</span><span class="params">(n + <span class="number">1</span>, <span class="literal">false</span>)</span></span>;</span><br><span class="line">    <span class="type">int</span> father[n + <span class="number">1</span>];</span><br><span class="line">    <span class="type">int</span> siz[n + <span class="number">1</span>];</span><br><span class="line">    <span class="type">int</span> cnt_bridge;</span><br><span class="line">    dfn_count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; m; i++)&#123;</span><br><span class="line">        <span class="type">int</span> u, v;</span><br><span class="line">        cin &gt;&gt; u &gt;&gt; v;</span><br><span class="line">        vec[u].<span class="built_in">push_back</span>(v);</span><br><span class="line">        vec[v].<span class="built_in">push_back</span>(u);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">tarjan</span>(<span class="number">1</span>, <span class="number">1</span>, vec, low, dfn, father, siz, isbridge, dfn_count);</span><br><span class="line">    <span class="function">vector&lt;<span class="type">bool</span>&gt; <span class="title">vis</span><span class="params">(n + <span class="number">1</span>, <span class="number">0</span>)</span></span>;</span><br><span class="line">    ll ans = <span class="number">1ll</span> * n * (n - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">    <span class="built_in">getans</span>(<span class="number">1</span>, vis, ans, n, vec, siz, isbridge);</span><br><span class="line"></span><br><span class="line">    cout &lt;&lt; ans &lt;&lt; endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> t;</span><br><span class="line">    cin &gt;&gt; t;</span><br><span class="line">    <span class="keyword">while</span>(t--)&#123;</span><br><span class="line">        <span class="built_in">solve</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>python的写法得换成迭代的形式，写递归会爆栈，用Python写算法享大福了（）。</p>
+<p>贴一下别人的写法，我的写法有点垃圾，前后处理的情况用for
+else处理还挺好用的，这样就不用单独用状态区分了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># Versió iterativa per evitar recursion depth limit.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_bridges</span>(<span class="params">graph</span>):</span><br><span class="line"></span><br><span class="line">    n = <span class="built_in">len</span>(graph)</span><br><span class="line">    ids = [-<span class="number">1</span>] * n</span><br><span class="line">    low = [<span class="number">0</span>] * n</span><br><span class="line">    bridges = []</span><br><span class="line">    id_counter = <span class="number">0</span></span><br><span class="line">    stack = []</span><br><span class="line">    parent = [-<span class="number">1</span>] * n</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n):</span><br><span class="line">        <span class="keyword">if</span> ids[i] == -<span class="number">1</span>:</span><br><span class="line">            stack.append((i, <span class="built_in">iter</span>(graph[i])))</span><br><span class="line">            ids[i] = low[i] = id_counter</span><br><span class="line">            id_counter += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> stack:</span><br><span class="line">                v, children = stack[-<span class="number">1</span>]</span><br><span class="line">                <span class="keyword">for</span> to <span class="keyword">in</span> children:</span><br><span class="line">                    <span class="keyword">if</span> ids[to] == -<span class="number">1</span>:</span><br><span class="line">                        stack.append((to, <span class="built_in">iter</span>(graph[to])))</span><br><span class="line">                        parent[to] = v</span><br><span class="line">                        ids[to] = low[to] = id_counter</span><br><span class="line">                        id_counter += <span class="number">1</span></span><br><span class="line">                        <span class="keyword">break</span></span><br><span class="line">                    <span class="keyword">elif</span> to != parent[v]:</span><br><span class="line">                        low[v] = <span class="built_in">min</span>(low[v], ids[to])</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    stack.pop()</span><br><span class="line">                    <span class="keyword">if</span> parent[v] != -<span class="number">1</span>:</span><br><span class="line">                        low[parent[v]] = <span class="built_in">min</span>(low[parent[v]], low[v])</span><br><span class="line">                        <span class="keyword">if</span> ids[parent[v]] &lt; low[v]:</span><br><span class="line">                            bridges.append((parent[v], v))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bridges</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">int</span>(<span class="built_in">input</span>())):</span><br><span class="line">    n, m = <span class="built_in">list</span>(<span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().split()))</span><br><span class="line">    g = [[] <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n)]</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(m):</span><br><span class="line">        u, v = <span class="built_in">list</span>(<span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().split()))</span><br><span class="line">        g[u-<span class="number">1</span>].append(v-<span class="number">1</span>)</span><br><span class="line">        g[v-<span class="number">1</span>].append(u-<span class="number">1</span>)</span><br><span class="line">    sizes = [<span class="number">1</span>]*n</span><br><span class="line">    pare = [-<span class="number">1</span>]*n</span><br><span class="line">    stack = [<span class="number">0</span>]</span><br><span class="line">    dfs = []</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> g[u]:</span><br><span class="line">            <span class="keyword">if</span> pare[v] == -<span class="number">1</span> <span class="keyword">and</span> v != <span class="number">0</span>:</span><br><span class="line">                pare[v] = u</span><br><span class="line">                stack.append(v)</span><br><span class="line">                dfs.append(v)</span><br><span class="line">    <span class="keyword">while</span> dfs:</span><br><span class="line">        u = dfs.pop()</span><br><span class="line">        sizes[pare[u]] += sizes[u]</span><br><span class="line">    </span><br><span class="line">    bridges = find_bridges(g)</span><br><span class="line">    ans = n*(n-<span class="number">1</span>)//<span class="number">2</span></span><br><span class="line">    <span class="keyword">for</span> (u, v) <span class="keyword">in</span> bridges:</span><br><span class="line">        x = <span class="built_in">min</span>(sizes[u], sizes[v])</span><br><span class="line">        ans = <span class="built_in">min</span>(ans, x*(x-<span class="number">1</span>)//<span class="number">2</span> + (n-x)*(n-x-<span class="number">1</span>)//<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(ans) </span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">dfn_count = <span class="number">0</span></span><br><span class="line">ans = <span class="number">0</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">tarjan</span>(<span class="params">u, fa, vec, low, dfn, father, isbridge</span>):</span><br><span class="line">    <span class="keyword">global</span> dfn_count</span><br><span class="line">    dfn_count = <span class="number">0</span></span><br><span class="line">    stack = [(u, -<span class="number">1</span>, <span class="number">0</span>)]  <span class="comment"># (current_node, parent_node, state)</span></span><br><span class="line">    result_stack = []  <span class="comment"># To store the order of processing nodes for correct size calculation</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u, fa, state = stack.pop()</span><br><span class="line">        <span class="comment"># print(f&quot;pop (u:&#123;u&#125;, fa:&#123;fa&#125;, state: &#123;state&#125;)&quot;)</span></span><br><span class="line">        <span class="keyword">if</span> state == <span class="number">0</span>:  <span class="comment"># Pre-processing</span></span><br><span class="line">            father[u] = fa</span><br><span class="line">            <span class="keyword">if</span> dfn[u] == <span class="number">0</span>:</span><br><span class="line">                dfn_count += <span class="number">1</span></span><br><span class="line">                dfn[u] = low[u] = dfn_count</span><br><span class="line">            result_stack.append((u, fa))</span><br><span class="line">            <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">                <span class="keyword">if</span> dfn[v] == <span class="number">0</span>:</span><br><span class="line">                    stack.append((v, u, <span class="number">1</span>)) <span class="comment"># Post-processing state</span></span><br><span class="line">                    <span class="comment"># print(f&quot;append (u:&#123;v&#125;, fa:&#123;u&#125;, state: 1)&quot;)</span></span><br><span class="line">                    stack.append((v, u, <span class="number">0</span>))  <span class="comment"># Pre-processing state for child</span></span><br><span class="line">                    <span class="comment"># print(f&quot;append (v: &#123;u&#125;, u: &#123;v&#125;, state: 0)&quot;)</span></span><br><span class="line">                <span class="keyword">elif</span> dfn[v] &lt; dfn[u] <span class="keyword">and</span> v != fa:</span><br><span class="line">                    low[u] = <span class="built_in">min</span>(low[u], dfn[v])</span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># Post-processing</span></span><br><span class="line">            <span class="keyword">if</span> fa != -<span class="number">1</span>:</span><br><span class="line">                <span class="comment"># print(f&quot;state 1: u: &#123;u&#125;, fa: &#123;fa&#125;&quot;)</span></span><br><span class="line">                low[fa] = <span class="built_in">min</span>(low[fa], low[u])</span><br><span class="line">                <span class="keyword">if</span> low[u] &gt; dfn[fa]:</span><br><span class="line">                    isbridge[u] = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">getans</span>(<span class="params">u, vis, n, vec, siz, isbridge</span>):</span><br><span class="line">    <span class="keyword">global</span> ans</span><br><span class="line">    stack = [u]</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        vis[u] = <span class="literal">True</span></span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> vis[v]:</span><br><span class="line">                <span class="keyword">if</span> isbridge[v] == <span class="literal">True</span>:</span><br><span class="line">                    x, y = siz[v], n - siz[v]</span><br><span class="line">                    ans = <span class="built_in">min</span>(ans, (x * (x - <span class="number">1</span>) // <span class="number">2</span>) + (y * (y - <span class="number">1</span>) // <span class="number">2</span>))</span><br><span class="line">                stack.append(v)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    n, m = <span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().strip().split())</span><br><span class="line">    vec = &#123;&#125;</span><br><span class="line">    low = [ n + <span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    dfn = [ <span class="number">0</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    father = [ -<span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    siz = [ <span class="number">1</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    isbridge = [ <span class="literal">False</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    vis = [ <span class="literal">False</span> <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n + <span class="number">1</span>)]</span><br><span class="line">    <span class="keyword">global</span> dfn_count, ans</span><br><span class="line">    dfn_count = <span class="number">0</span></span><br><span class="line">    ans = <span class="built_in">int</span>(n * (n - <span class="number">1</span>) / <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(m):</span><br><span class="line">        u, v = <span class="built_in">map</span>(<span class="built_in">int</span>, <span class="built_in">input</span>().strip().split())</span><br><span class="line">        <span class="keyword">if</span> u <span class="keyword">in</span> vec:</span><br><span class="line">            vec[u].append(v)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            vec[u] = [v]</span><br><span class="line">        <span class="keyword">if</span> v <span class="keyword">in</span> vec:</span><br><span class="line">            vec[v].append(u)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            vec[v] = [u]</span><br><span class="line"></span><br><span class="line">    stack = [<span class="number">1</span>]</span><br><span class="line">    dfs = []</span><br><span class="line">    <span class="keyword">while</span> stack:</span><br><span class="line">        u = stack.pop()</span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> vec[u]:</span><br><span class="line">            <span class="keyword">if</span> father[v] == -<span class="number">1</span> <span class="keyword">and</span> v != <span class="number">1</span>:</span><br><span class="line">                father[v] = u</span><br><span class="line">                stack.append(v)</span><br><span class="line">                dfs.append(v)</span><br><span class="line">    <span class="keyword">while</span> dfs:</span><br><span class="line">        u = dfs.pop()</span><br><span class="line">        siz[father[u]] += siz[u]</span><br><span class="line">    tarjan(<span class="number">1</span>, <span class="number">0</span>, vec, low, dfn, father, isbridge)</span><br><span class="line">    <span class="comment"># print(f&quot;isbridge: &#123;isbridge&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;dfn: &#123;dfn&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;low: &#123;low&#125;&quot;)</span></span><br><span class="line">    <span class="comment"># print(f&quot;size: &#123;siz&#125;&quot;)</span></span><br><span class="line">    getans(<span class="number">1</span>, vis, n, vec, siz, isbridge)</span><br><span class="line">    <span class="built_in">print</span>(ans)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    t = <span class="built_in">int</span>(<span class="built_in">input</span>())</span><br><span class="line">    <span class="keyword">while</span>(t &gt; <span class="number">0</span>):</span><br><span class="line">        t -= <span class="number">1</span></span><br><span class="line">        solve()</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/07/08/240708-Self-supervised-loss/" rel="prev" title="240708_Self_supervised_loss">
+      <i class="fa fa-chevron-left"></i> 240708_Self_supervised_loss
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/07/20/Python-Spider/" rel="next" title="Python-Spider">
+      Python-Spider <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%A5-bridge"><span class="nav-number">1.</span> <span class="nav-text">桥 Bridge</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-number">1.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%89%BE%E6%A1%A5"><span class="nav-number">1.2.</span> <span class="nav-text">如何找桥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#f.-non-academic-problem"><span class="nav-number">1.3.</span> <span class="nav-text">1986F. Non-academic
+Problem</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    // window.MathJax = {
+    //   loader: {
+    //
+    //     source: {
+    //       '[tex]/amsCd': '[tex]/amscd',
+    //       '[tex]/AMScd': '[tex]/amscd'
+    //     }
+    //   },
+    //   tex: {
+    //     inlineMath: {'[+]': [['$', '$']]},
+    //
+    //     tags: 'ams'
+    //   },
+    //   options: {
+    //     renderActions: {
+    //       findScript: [10, doc => {
+    //         document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+    //           const display = !!node.type.match(/; *mode=display/);
+    //           const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+    //           const text = document.createTextNode('');
+    //           node.parentNode.replaceChild(text, node);
+    //           math.start = {node: text, delim: '', n: 0};
+    //           math.end = {node: text, delim: '', n: 0};
+    //           doc.math.push(math);
+    //         });
+    //       }, '', false],
+    //       insertedScript: [200, () => {
+    //         document.querySelectorAll('mjx-container').forEach(node => {
+    //           let target = node.parentNode;
+    //           if (target.nodeName.toLowerCase() === 'li') {
+    //             target.parentNode.classList.add('has-jax');
+    //           }
+    //         });
+    //       }, '', false]
+    //     }
+    //   }
+    // };
+    window.MathJax = {
+      tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+        processEscapes: true
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@2.7.8/unpacked/MathJax.js?config=TeX-MML-AM_CHTML';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
